@@ -7,7 +7,7 @@ import streamlit as st
 @st.cache(allow_output_mutation=True)
 def get_data_from_excel(uploaded_file):
     print("Get Data from Excel Function has been executed")
-    df = pd.ExcelFile(uploaded_file)
+    df = pd.ExcelFile(uploaded_file, engine="openpyxl")
     return df
 
 # Generate Dataframe for each Tab & replace Blank in headers with underscore
@@ -124,7 +124,8 @@ def get_custom_df_main(df_vInfo, df_vCPU, df_vMemory, vCluster_selected, powerst
     # select vCPU & vMemory columns 
     df_vCPU_reduced = df_vCPU[["vCPUs","Peak_%","Average_%","Median_%","95th_Percentile_%_(recommended)","MOID"]] 
     df_vMemory_reduced = df_vMemory[["Size_(MiB)","Peak_%","Average_%","Median_%","95th_Percentile_%_(recommended)","MOID"]]
-    df_vMemory_reduced["Size_(MiB)"] = df_vMemory_reduced["Size_(MiB)"] / 1024 # Umrechnen von MiB in GiB
+    #df_vMemory_reduced["Size_(MiB)"] = df_vMemory_reduced["Size_(MiB)"] / 1024 # Umrechnen von MiB in GiB
+    df_vMemory_reduced.loc[:,"Size_(MiB)"] = df_vMemory_reduced["Size_(MiB)"] / 1024 # Umrechnen von MiB in GiB
     df_vMemory_reduced.rename(columns={'Size_(MiB)': 'Size_(GiB)'}, inplace=True) # Spalte umbenennen
 
     # Add cloumn suffix due to duplicate names from vcpu and vmemory    

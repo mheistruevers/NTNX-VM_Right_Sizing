@@ -8,7 +8,6 @@ import streamlit as st
 def get_data_from_excel(uploaded_file):
     print("Get Data from Excel Function has been executed")
     df = pd.ExcelFile(uploaded_file, engine="openpyxl")
-    st.balloons()
     return df
 
 # Generate Dataframe for each Tab & replace Blank in headers with underscore
@@ -118,7 +117,7 @@ def get_vMemory_95_percentile_total_value(df_row):
 
 # Generate custom main dataframe
 def get_custom_df_main(df_vInfo, df_vCPU, df_vMemory, vCluster_selected, powerstate_selected):
-    
+
     # Reduce vInfo DF only to needed columns
     df_vinfo_reduced = df_vInfo[["VM_Name","Power_State","Cluster_Name","Host_Name","MOID"]].query("Cluster_Name==@vCluster_selected").query("Power_State==@powerstate_selected")
 
@@ -150,7 +149,7 @@ def get_custom_df_main(df_vInfo, df_vCPU, df_vMemory, vCluster_selected, powerst
     # 5. Merge DFs and create large main df as basis for calculations
     df_vinfo_vcpu_merged = df_vinfo_reduced.merge(df_vCPU_reduced, left_on="MOID", right_on="vCPU_MOID", how="left")
     df_vinfo_vcpu_vRAM_merged = df_vinfo_vcpu_merged.merge(df_vMemory_reduced, left_on="MOID", right_on="vMemory_MOID", how="left")
-
+ 
     return df_vinfo_vcpu_vRAM_merged
 
 # Generate vCPU Overview Section for streamlit column 1+2
@@ -164,7 +163,7 @@ def generate_vCPU_overview_df(custom_df):
     vCPU_overview_first_column = {'': ["# vCPUs (provisioned)", "# vCPUs (Peak)", "# vCPUs (Average)", "# vCPUs (Median)", "# vCPUs (95th Percentile)"]}
     vCPU_overview_df = pd.DataFrame(vCPU_overview_first_column)
     vCPU_overview_second_column = [vCPU_provisioned, vCPU_peak, vCPU_average, vCPU_median, vCPU_95_percentile]
-    vCPU_overview_df['vCPU'] = vCPU_overview_second_column
+    vCPU_overview_df.loc[:,'vCPU'] = vCPU_overview_second_column
     return vCPU_overview_df
 
 # Generate vMemory Overview Section for streamlit column 1+2
@@ -178,7 +177,7 @@ def generate_vMemory_overview_df(custom_df):
     vMemory_overview_first_column = {'': ["# vMemory (provisioned)", "# vMemory (Peak)", "# vMemory (Average)", "# vMemory (Median)", "# vMemory (95th Percentile)"]}
     vMemory_overview_df = pd.DataFrame(vMemory_overview_first_column)
     vMemory_overview_second_column = [vMemory_provisioned, vMemory_peak, vMemory_average, vMemory_median, vMemory_95_percentile]
-    vMemory_overview_df['GiB'] = vMemory_overview_second_column
+    vMemory_overview_df.loc[:,'GiB'] = vMemory_overview_second_column
     return vMemory_overview_df
 
 # Generate df for output on streamlit dataframe

@@ -8,6 +8,7 @@ import streamlit as st
 def get_data_from_excel(uploaded_file):
     print("Get Data from Excel Function has been executed")
     df = pd.ExcelFile(uploaded_file, engine="openpyxl")
+    st.balloons()
     return df
 
 # Generate Dataframe for each Tab & replace Blank in headers with underscore
@@ -134,17 +135,17 @@ def get_custom_df_main(df_vInfo, df_vCPU, df_vMemory, vCluster_selected, powerst
 
     # calculate vcpu custom values for peak, average, median and 95th percentile
     df_vCPU_reduced = df_vCPU_reduced.astype({"vCPU_vCPUs": int})
-    df_vCPU_reduced['vCPU_Peak_Total'] = df_vCPU_reduced.apply(get_vCPU_peak_total_value, axis=1).astype(int)
-    df_vCPU_reduced['vCPU_Average_Total'] = df_vCPU_reduced.apply(get_vCPU_average_total_value, axis=1).astype(int)
-    df_vCPU_reduced['vCPU_Median_Total'] = df_vCPU_reduced.apply(get_vCPU_median_total_value, axis=1).astype(int)
-    df_vCPU_reduced['vCPU_95th_Percentile_%_Total'] = df_vCPU_reduced.apply(get_vCPU_95_percentile_total_value, axis=1).astype(int)
+    df_vCPU_reduced.loc[:,'vCPU_Peak_Total'] = df_vCPU_reduced.apply(get_vCPU_peak_total_value, axis=1).astype(int)
+    df_vCPU_reduced.loc[:,'vCPU_Average_Total'] = df_vCPU_reduced.apply(get_vCPU_average_total_value, axis=1).astype(int)
+    df_vCPU_reduced.loc[:,'vCPU_Median_Total'] = df_vCPU_reduced.apply(get_vCPU_median_total_value, axis=1).astype(int)
+    df_vCPU_reduced.loc[:,'vCPU_95th_Percentile_%_Total'] = df_vCPU_reduced.apply(get_vCPU_95_percentile_total_value, axis=1).astype(int)
 
     # calculate vmemory custom values for peak, average, median and 95th percentile
     df_vMemory_reduced = df_vMemory_reduced.astype({"vMemory_Size_(GiB)": int})
-    df_vMemory_reduced['vMemory_Peak_Total'] = df_vMemory_reduced.apply(get_vMemory_peak_total_value, axis=1).astype(int)
-    df_vMemory_reduced['vMemory_Average_Total'] = df_vMemory_reduced.apply(get_vMemory_average_total_value, axis=1).astype(int)
-    df_vMemory_reduced['vMemory_Median_Total'] = df_vMemory_reduced.apply(get_vMemory_median_total_value, axis=1).astype(int)
-    df_vMemory_reduced['vMemory_95th_Percentile_%_Total'] = df_vMemory_reduced.apply(get_vMemory_95_percentile_total_value, axis=1).astype(int)
+    df_vMemory_reduced.loc[:,'vMemory_Peak_Total'] = df_vMemory_reduced.apply(get_vMemory_peak_total_value, axis=1).astype(int)
+    df_vMemory_reduced.loc[:,'vMemory_Average_Total'] = df_vMemory_reduced.apply(get_vMemory_average_total_value, axis=1).astype(int)
+    df_vMemory_reduced.loc[:,'vMemory_Median_Total'] = df_vMemory_reduced.apply(get_vMemory_median_total_value, axis=1).astype(int)
+    df_vMemory_reduced.loc[:,'vMemory_95th_Percentile_%_Total'] = df_vMemory_reduced.apply(get_vMemory_95_percentile_total_value, axis=1).astype(int)
 
     # 5. Merge DFs and create large main df as basis for calculations
     df_vinfo_vcpu_merged = df_vinfo_reduced.merge(df_vCPU_reduced, left_on="MOID", right_on="vCPU_MOID", how="left")

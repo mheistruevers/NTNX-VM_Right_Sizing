@@ -3,6 +3,7 @@ import plotly.graph_objs as go
 import streamlit as st  # pip install streamlit
 import custom_functions
 import pandas as pd
+import warnings
 
 ######################
 # Page Config
@@ -19,20 +20,17 @@ hide_streamlit_style = """
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 custom_df = pd.DataFrame() # Initialize Main Dataframe as Empty in order to check whether it has been filled
+warnings.simplefilter("ignore") # Ignore openpyxl Excile File Warning while reading (no default style)
 
 ######################
 # Page sections
 ######################
-
 header_section = st.container() # Description of page & what it is about
 content_section = st.container() # Content of page - either error message if wrong excel file or analysis content
-
 
 ######################
 # Page content
 ######################
-
-
 
 with st.sidebar:
     st.markdown('# **Upload**')
@@ -40,35 +38,26 @@ with st.sidebar:
 
     if uploaded_file is not None:
         try:
-            
-            df = custom_functions.get_data_from_excel(uploaded_file)
-            df_vInfo = custom_functions.get_tabs_df_from_excel(df, "vInfo")
-            df_vCPU = custom_functions.get_tabs_df_from_excel(df, "vCPU")
-            df_vMemory = custom_functions.get_tabs_df_from_excel(df, "vMemory")
-            
-            #df_vInfo = 
-            #print("test davor")
-            #print(df[df['vInfo'])
-            #print("test danach")
+            # load excel, filter our relevant tabs and columns, merge all in one dataframe
+            main_df = custom_functions.get_data_from_excel(uploaded_file)
+
             st.sidebar.markdown('---')
             st.sidebar.markdown('## **Filter**')
 
             vCluster_selected = st.sidebar.multiselect(
                 "vCluster selektieren:",
-                options=sorted(df_vInfo["Cluster_Name"].unique()),
-                default=sorted(df_vInfo["Cluster_Name"].unique())
+                options=sorted(main_df["Cluster Name"].unique()),
+                default=sorted(main_df["Cluster Name"].unique())
             )
-            #options=sorted(df_vInfo["Cluster_Name"].unique()),
-            #default=sorted(df_vInfo["Cluster_Name"].unique())
 
             powerstate_selected = st.sidebar.multiselect(
                 "VM Status selektieren:",
-                options=sorted(df_vInfo["Power_State"].unique()),
-                default=sorted(df_vInfo["Power_State"].unique())
+                options=sorted(main_df["Power State"].unique()),
+                default=sorted(main_df["Power State"].unique())
             )
 
-            # Main Calculation for Dataframe which is used for most calculcations based on multiselect selection
-            custom_df = custom_functions.get_custom_df_main(df_vInfo, df_vCPU, df_vMemory, vCluster_selected, powerstate_selected)
+            # Apply Multiselect Filter to dataframe
+            custom_df = main_df.query("`Cluster Name`==@vCluster_selected").query("`Power State`==@powerstate_selected")
 
         except Exception as e:
             content_section.error("FEHLER: Die hochgeladene Excel Datei konnte leider nicht ausgelesen werden.")
@@ -78,7 +67,6 @@ with st.sidebar:
                     * VM Name
                     * Power State
                     * Cluster Name
-                    * Host Name
                     * MOID
                 * ***vCPU***
                     * vCPUs
@@ -145,7 +133,7 @@ with content_section:
                 x = "",
                 y = "vCPU"
             )
-            bar_chart_vCPU.update_traces(marker_color=bar_chart_marker_colors) # Nutanix Blue
+            bar_chart_vCPU.update_traces(marker_color=bar_chart_marker_colors)
             st.plotly_chart(bar_chart_vCPU,use_container_width=True, config=bar_chart_config)
 
         with column_3_1:
@@ -165,7 +153,6 @@ with content_section:
                 x = "",
                 y = "GiB"
             )
-            #bar_chart_vMemory.update_traces(marker_color='#034EA2') # Nutanix Blue
             bar_chart_vMemory.update_traces(marker_color=bar_chart_marker_colors)
             st.plotly_chart(bar_chart_vMemory,use_container_width=True, config=bar_chart_config)
 
@@ -177,17 +164,20 @@ with content_section:
         # Generate a Multiselect Filter for Column selection, by default only recommended columns are shown
         vm_detail_columns_to_show = st.multiselect(
             'Wählen Sie die Spalten die angezeigt werden sollen:',
-            ["vCPU Peak %", "vCPU Peak #", "vCPU Average %", "vCPU Average #", "vCPU Median %", "vCPU Median #", "vCPU 95th Percentile %", "vCPU 95th Percentile #", "vMemory Peak %", "vMemory Peak #", "vMemory Average %", "vMemory Average #", "vMemory Median %", "vMemory Median #", "vMemory 95th Percentile %", "vMemory 95th Percentile #"],
-            ["vCPU 95th Percentile %", "vCPU 95th Percentile #", "vMemory 95th Percentile %", "vMemory 95th Percentile #"])
+            options=list(custom_df.columns.values),
+            default=list(custom_df.iloc[:, [0,1,2,3,10,11,12,19,20]])
+            )
 
         # Generate Dataframe to be shown on streamlit website
         output_to_show = custom_functions.generate_results_df_for_output(custom_df,vm_detail_columns_to_show)
         st.dataframe(output_to_show)
         
-        # Offer option to save Dataframe as Excel
-        df_xlsx = custom_functions.download_as_excel(output_to_show)
-        st.download_button(label='⏬ Aktuelle Auswertung herunterladen (Excel Format)',
-                                    data= df_xlsx,
-                                    file_name= 'VM_Right_Sizing_Analyse.xlsx')
+        # Download Section, form added in order to avoid reload of download_as_excel function on every filter usage
+        form = st.form(key='my-form2')
+        submit = form.form_submit_button('Aktuelle Auswertung als Excel herunterladen?')
 
-
+        if submit:
+            st.download_button(
+                label='⏬ Download',
+                data= custom_functions.download_as_excel(output_to_show),
+                file_name= 'VM_Right_Sizing_Analyse.xlsx')

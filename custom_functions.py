@@ -40,10 +40,10 @@ def get_data_from_excel(uploaded_file):
     df_vCPU.loc[:,'vCPU 95th Percentile #'] = df_vCPU.apply(lambda row: get_vCPU_total_values(row, 'vCPU 95th Percentile %'), axis=1).astype(int)
 
     # Add / Generate Total Columns from vMemory performance percentage data
-    df_vMemory.loc[:,'vMemory Peak #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory Peak %'), axis=1).astype(int)
-    df_vMemory.loc[:,'vMemory Average #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory Average %'), axis=1).astype(int)
-    df_vMemory.loc[:,'vMemory Median #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory Median %'), axis=1).astype(int)
-    df_vMemory.loc[:,'vMemory 95th Percentile #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory 95th Percentile %'), axis=1).astype(int)
+    df_vMemory.loc[:,'vMemory Peak #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory Peak %'), axis=1)
+    df_vMemory.loc[:,'vMemory Average #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory Average %'), axis=1)
+    df_vMemory.loc[:,'vMemory Median #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory Median %'), axis=1)
+    df_vMemory.loc[:,'vMemory 95th Percentile #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory 95th Percentile %'), axis=1)
 
     df_vinfo_vcpu_merged = pd.merge(df_vInfo, df_vCPU, left_on="MOID", right_on="vCPU MOID", how="left")
     main_df = pd.merge(df_vinfo_vcpu_merged, df_vMemory, left_on="MOID", right_on="vMemory MOID", how="left")
@@ -57,7 +57,7 @@ def get_data_from_excel(uploaded_file):
 # Generate vCPU Values for Peak, Median, Average & 95 Percentile
 def get_vCPU_total_values(df_row, compare_value):
     if pd.isna(df_row[compare_value]):
-        get_total_value = df_row['vCPUs'] # if no peak data is available use provisioned vCPU data
+        get_total_value = df_row['vCPUs'] # if no data is available use provisioned vCPU data
     else:
         get_total_value = df_row['vCPUs'] * (df_row[compare_value]/100)* 1.2
         if(get_total_value) < 1:
@@ -68,15 +68,33 @@ def get_vCPU_total_values(df_row, compare_value):
 
 # Generate vMemory Values for Peak, Median, Average & 95 Percentile
 def get_vMemory_total_values(df_row, compare_value):
-    if pd.isna(df_row[compare_value]):
-        get_total_value = df_row['vMemory Size (GiB)'] # if no peak data is available use provisioned vCPU data
+    vMemory_row_value = df_row['vMemory Size (GiB)']
+    vMemory_perf_value = df_row[compare_value]
+    if pd.isna(vMemory_perf_value):
+        get_total_value = vMemory_row_value # if no data is available use provisioned vMemory data
     else:
-        get_total_value = df_row['vMemory Size (GiB)'] * (df_row[compare_value]/100)* 1.2
-        if(get_total_value) < 1:
-            get_total_value = 1
-        if(get_total_value) > df_row['vMemory Size (GiB)']:
-            get_total_value = df_row['vMemory Size (GiB)']
-    return np.ceil(get_total_value)
+        get_total_value = vMemory_row_value * (vMemory_perf_value/100)* 1.2
+        if np.less(get_total_value, 1):
+            if np.less(vMemory_row_value, 1):
+                get_total_value = vMemory_row_value
+            else:
+                get_total_value = 1
+        elif np.greater(get_total_value, vMemory_row_value):
+            get_total_value = vMemory_row_value
+        else:
+            get_total_value = np.ceil(get_total_value)
+    return get_total_value
+
+# Returns a value rounded up to a specific number of decimal places.
+def round_decimals_up(number:float, decimals:int=2):
+    if not isinstance(decimals, int):
+        raise TypeError("decimal places must be an integer")
+    elif decimals < 0:
+        raise ValueError("decimal places has to be 0 or more")
+    elif decimals == 0:
+        return math.ceil(number)
+    factor = 10 ** decimals
+    return np.ceil(number * factor) / factor
 
 # Generate vCPU Overview Section for streamlit column 1+2
 def generate_vCPU_overview_df(custom_df):
@@ -96,16 +114,19 @@ def generate_vCPU_overview_df(custom_df):
 # Generate vMemory Overview Section for streamlit column 1+2
 def generate_vMemory_overview_df(custom_df):
 
-    vMemory_provisioned = int(custom_df["vMemory Size (GiB)"].sum())
-    vMemory_peak = int(custom_df["vMemory Peak #"].sum())
-    vMemory_average = int(custom_df["vMemory Average #"].sum())
-    vMemory_median = int(custom_df["vMemory Median #"].sum())
-    vMemory_95_percentile = int(custom_df["vMemory 95th Percentile #"].sum())
+    vMemory_provisioned = custom_df["vMemory Size (GiB)"].sum()
+    vMemory_peak = custom_df["vMemory Peak #"].sum()
+    vMemory_average = custom_df["vMemory Average #"].sum()
+    vMemory_median = custom_df["vMemory Median #"].sum()
+    vMemory_95_percentile = custom_df["vMemory 95th Percentile #"].sum()
     vMemory_overview_first_column = {'': ["# vMemory (provisioned)", "# vMemory (Peak)", "# vMemory (Average)", "# vMemory (Median)", "# vMemory (95th Percentile)"]}
     vMemory_overview_df = pd.DataFrame(vMemory_overview_first_column)
     vMemory_overview_second_column = [vMemory_provisioned, vMemory_peak, vMemory_average, vMemory_median, vMemory_95_percentile]
     vMemory_overview_df.loc[:,'GiB'] = vMemory_overview_second_column
-    
+
+     # Style data values to two decimals and set default value in case of NAN
+    vMemory_overview_df = vMemory_overview_df.style.format(precision=2, na_rep='nicht vorhanden') 
+   
     return vMemory_overview_df
 
 # Generate df for output on streamlit dataframe

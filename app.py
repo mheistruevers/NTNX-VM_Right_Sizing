@@ -90,13 +90,14 @@ with st.sidebar:
 with header_section:
     st.markdown("<h1 style='text-align: left; color:#034ea2;'>VM Right Sizing Analyse</h1>", unsafe_allow_html=True)
     st.markdown('Ein Hobby-Projekt von [**Martin Stenke**](https://www.linkedin.com/in/mstenke/) zur einfachen Analyse einer Nutanix Collector Auswertung hinsichtlich VM Right Sizing Empfehlungen.')
-    st.markdown('***Hinweis:*** Der Nutanix Collector kann neben den zugewiesenen vCPU & vMemory Ressourcen an die VMs ebenfalls die Performance Werte der letzten 7 Tage aus vCenter auslesen und bietet anhand dessen eine Möglichkeit für VM Right-Sizing Empfehlungen. Stellen Sie bitte sicher, dass die Auswertung für einen repräsentativen Zeitraum durchgeführt wurde. Für die ausgeschalteten VMs stehen (abhängig davon wie lange diese bereits ausgeschaltet sind) i.d.R. keine Performance Werte (Peak, Average, Median oder 95th Percentile) zur Verfügung - in diesem Fall werden die provisionierten / zugewiesenen Werte verwendet. Auch werden bei allen Performance basierten Werten 20% zusätzlicher Puffer mit eingerechnet. **Generell ist die Empfehlung sich bei den Performance Werten an den 95th Percentile (95% Prozent) Werten zu orientieren, da diese die tatsächliche Auslastung am besten repräsentieren und nicht durch ggf. kurzzeitige Lastspitzen verfälscht werden.**')
+    st.markdown('***Hinweis:*** Der Nutanix Collector kann neben den zugewiesenen vCPU & vMemory Ressourcen an die VMs ebenfalls die Performance Werte der letzten 7 Tage in 30 Minuten Intervallen aus vCenter auslesen und bietet anhand dessen eine Möglichkeit für VM Right-Sizing Empfehlungen. Stellen Sie bitte sicher, dass die Auswertung für einen repräsentativen Zeitraum durchgeführt wurde. Für die ausgeschalteten VMs stehen (abhängig davon wie lange diese bereits ausgeschaltet sind) i.d.R. keine Performance Werte (Peak, Average, Median oder 95th Percentile) zur Verfügung - in diesem Fall werden die provisionierten / zugewiesenen Werte verwendet. Auch werden bei allen Performance basierten Werten 20% zusätzlicher Puffer mit eingerechnet. **Generell ist die Empfehlung sich bei den Performance Werten an den 95th Percentile (95% Prozent) Werten zu orientieren, da diese die tatsächliche Auslastung am besten repräsentieren und nicht durch ggf. kurzzeitige Lastspitzen verfälscht werden.**')
     st.info('***Disclaimer: Hierbei handelt es sich lediglich um ein Hobby Projekt - keine Garantie auf Vollständigkeit oder Korrektheit der Auswertung / Daten.***')
     st.markdown("---")
 
 with content_section: 
 
     if not custom_df.empty:
+        st.success("##### Die folgende Nutanix Collector Auswertung umfasst {}".format(custom_df['Cluster Name'].nunique())+" Cluster und {}".format(custom_df.shape[0])+" VMs.")
 
         # Generate Overview Dataframes for vCPU & vMemory
         vCPU_overview = custom_functions.generate_vCPU_overview_df(custom_df)
@@ -118,8 +119,8 @@ with content_section:
         
         with column_1_1:
             # Unfortunately no vertical center implemented in streamlit yet - therefore the following workaround needed
-            st.write('')
-            st.write('')
+            st.write('') 
+            st.write('') 
             st.write('')
             st.write('')
             st.write('')
@@ -149,7 +150,7 @@ with content_section:
 
         with column_4_1:
             bar_chart_vMemory = px.bar(        
-                vMemory_overview,
+                vMemory_overview.data,
                 x = "",
                 y = "GiB"
             )
@@ -157,6 +158,9 @@ with content_section:
             st.plotly_chart(bar_chart_vMemory,use_container_width=True, config=bar_chart_config)
 
         # Main Section for VM Details
+        savings_vCPU = int(vCPU_overview.iat[0,1])-int(vCPU_overview.iat[4,1])
+        savings_vMemory = int(vMemory_overview.data.iat[0,1])-int(vMemory_overview.data.iat[4,1])
+        st.markdown(f"<h5 style='text-align: center; color:#034EA2;'> In Summe besteht ein mögliches Optimierungs-Potenzial von {savings_vCPU} vCPUs und {savings_vMemory} GiB Memory (basierend auf 'provisioned' vs '95th Percentile' Ressourcen-Bedarf).</h5>", unsafe_allow_html=True)
         st.markdown("---")
         st.markdown('#### VM Details:')
         st.markdown("In der folgenden Tabelle können Sie die vCPU & vMemory Details der einzelnen VMs genauer betrachten. Anhand der Filter können Sie bestimmte Spalten ein und oder ausblenden und so verschiedene umfangreiche Ansichten erhalten. Die Spalten lassen sich auf oder absteigend sortieren und rechts neben der Tabelle erscheint beim darüber fahren ein Vergrößern-Symbol um die Tabelle auf Fullscreen zu vergrößern. Zuletzt lässt sich die Tabelle als Excel File speichern. Die Daten in der Tabelle untergliedern sich dabei zum einen in die jeweiligen '%' und daraus berechneten Total Werte für vCPU & Memory '#'.")
@@ -165,14 +169,14 @@ with content_section:
         vm_detail_columns_to_show = st.multiselect(
             'Wählen Sie die Spalten die angezeigt werden sollen:',
             options=list(custom_df.columns.values),
-            default=list(custom_df.iloc[:, [0,1,2,3,10,11,12,19,20]])
+            default=list(custom_df.iloc[:, [0,1,2,3,10,11,12,19,20]]) # Column index of deafult columns to display
             )
 
         # Generate Dataframe to be shown on streamlit website
         output_to_show = custom_functions.generate_results_df_for_output(custom_df,vm_detail_columns_to_show)
         st.dataframe(output_to_show)
         
-        # Download Section, form added in order to avoid reload of download_as_excel function on every filter usage
+        # Download Section form added in order to avoid reload of download_as_excel function on every filter usage
         form = st.form(key='my-form2')
         submit = form.form_submit_button('Aktuelle Auswertung als Excel herunterladen?')
 

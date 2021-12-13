@@ -91,7 +91,7 @@ with st.sidebar:
 with header_section:
     st.markdown("<h1 style='text-align: left; color:#034ea2;'>VM Right Sizing Analyse</h1>", unsafe_allow_html=True)
     st.markdown('Ein Hobby-Projekt von [**Martin Stenke**](https://www.linkedin.com/in/mstenke/) zur einfachen Analyse einer Nutanix Collector Auswertung hinsichtlich VM Right Sizing Empfehlungen.')
-    st.markdown('***Hinweis:*** Der Nutanix Collector kann neben den zugewiesenen vCPU & vMemory Ressourcen an die VMs ebenfalls die Performance Werte der letzten 7 Tage in 30 Minuten Intervallen aus vCenter auslesen und bietet anhand dessen eine Möglichkeit für VM Right-Sizing Empfehlungen. Stellen Sie bitte sicher, dass die Auswertung für einen repräsentativen Zeitraum durchgeführt wurde. Für die ausgeschalteten VMs stehen (abhängig davon wie lange diese bereits ausgeschaltet sind) i.d.R. keine Performance Werte (Peak, Average, Median oder 95th Percentile) zur Verfügung - in diesem Fall werden die provisionierten / zugewiesenen Werte verwendet. Auch werden bei allen Performance basierten Werten 20% zusätzlicher Puffer mit eingerechnet. **Generell ist die Empfehlung sich bei den Performance Werten an den 95th Percentile (95% Prozent) Werten zu orientieren, da diese die tatsächliche Auslastung am besten repräsentieren und nicht durch ggf. kurzzeitige Lastspitzen verfälscht werden.**')
+    st.markdown('***Hinweis:*** Der Nutanix Collector kann neben den zugewiesenen vCPU & vMemory Ressourcen an die VMs ebenfalls die Performance Werte der letzten 7 Tage in 30 Minuten Intervallen aus vCenter/Prism auslesen und bietet anhand dessen eine Möglichkeit für VM Right-Sizing Empfehlungen. Stellen Sie bitte sicher, dass die Auswertung für einen repräsentativen Zeitraum durchgeführt wurde. Für die ausgeschalteten VMs stehen (abhängig davon wie lange diese bereits ausgeschaltet sind) i.d.R. keine Performance Werte (Peak, Average, Median oder 95th Percentile) zur Verfügung - in diesem Fall werden die provisionierten / zugewiesenen Werte verwendet. Auch werden bei allen Performance basierten Werten 20% zusätzlicher Puffer mit eingerechnet. **Generell ist die Empfehlung sich bei den Performance Werten an den 95th Percentile Werten zu orientieren, da diese die tatsächliche Auslastung am besten repräsentieren und nicht durch ggf. kurzzeitige Lastspitzen verfälscht werden.**')
     st.info('***Disclaimer: Hierbei handelt es sich lediglich um ein Hobby Projekt - keine Garantie auf Vollständigkeit oder Korrektheit der Auswertung / Daten.***')
     st.markdown("---")
 
@@ -162,7 +162,8 @@ with content_section:
         savings_vCPU = int(vCPU_overview.iat[0,1])-int(vCPU_overview.iat[4,1])
         savings_vMemory = int(vMemory_overview.data.iat[0,1])-int(vMemory_overview.data.iat[4,1])
         st.markdown(f"<h5 style='text-align: center; color:#034EA2;'> In Summe besteht ein mögliches VM Optimierungs-Potenzial von {savings_vCPU} vCPUs und {savings_vMemory} GiB Memory (basierend auf 'provisioned' vs '95th Percentile' Ressourcen-Bedarf).</h5>", unsafe_allow_html=True)
-        st.markdown("<h4 style='text-align: center; color:#000000; background-color: #F5F5F5;'>vCPU & vMemory Auslastungs-Verteilung:</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; color:#000000; background-color: #F5F5F5;'>vCPU & vMemory Auslastungs-Verteilung:</h4><br />", unsafe_allow_html=True)
+        st.markdown("Die folgenden zwei Diagramme geben einen Überblick wie sich die einzelnen VMs hinsichtlich Ihrer zugewiesenen und tatsächlich verwendeter Ressourcen einsortieren lassen - jeder Punkt repräsentiert dabei eine VM. Das Diagramm ist interaktiv und bietet beim mit der Maus darüber fahren weitergehende Informationen zur der jeweiligen VM.")
 
         # Generate 2 Columns for vCPu & VMemory Overview tables & graphs
         column_1_2, column_2_2 = st.columns(2)
@@ -187,7 +188,7 @@ with content_section:
             scatter_chart_vMemory.update_traces(marker=dict(size=6,color='#034EA2'))
             st.plotly_chart(scatter_chart_vMemory,use_container_width=True)
 
-        st.markdown("<h4 style='text-align: center; color:#000000; background-color: #F5F5F5;'>VM Details:</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; color:#000000; background-color: #F5F5F5;'>VM Details:</h4><br/>", unsafe_allow_html=True)
         st.markdown("In der folgenden Tabelle können Sie die vCPU & vMemory Details der einzelnen VMs genauer betrachten. Anhand der Filter können Sie bestimmte Spalten ein und oder ausblenden und so verschiedene umfangreiche Ansichten erhalten. Die Spalten lassen sich auf oder absteigend sortieren und rechts neben der Tabelle erscheint beim darüber fahren ein Vergrößern-Symbol um die Tabelle auf Fullscreen zu vergrößern. Die Daten in der Tabelle untergliedern sich dabei zum einen in die jeweiligen '%' und daraus berechneten Total Werte für vCPU & Memory '#'. Zuletzt lässt sich die Tabelle als Excel Datei speichern.")
 
         # Generate a Multiselect Filter for Column selection, by default only recommended columns are shown
@@ -207,6 +208,4 @@ with content_section:
 
         if submit:
             st.download_button(
-                label='⏬ Download',
-                data= custom_functions.download_as_excel(output_to_show),
-                file_name= 'VM_Right_Sizing_Analyse.xlsx')
+                label='⏬ Download', data=custom_functions.download_as_excel(output_to_show), file_name='VM_Right_Sizing_Analyse.xlsx')

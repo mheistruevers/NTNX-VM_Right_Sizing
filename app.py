@@ -3,6 +3,7 @@ import plotly.graph_objs as go
 import streamlit as st  # pip install streamlit
 import custom_functions
 import pandas as pd
+import numpy as np
 import warnings
 
 ######################
@@ -60,7 +61,7 @@ with st.sidebar:
             custom_df = main_df.query("`Cluster Name`==@vCluster_selected").query("`Power State`==@powerstate_selected")
 
         except Exception as e:
-            content_section.error("FEHLER: Die hochgeladene Excel Datei konnte leider nicht ausgelesen werden.")
+            content_section.error("##### FEHLER: Die hochgeladene Excel Datei konnte leider nicht ausgelesen werden.")
             content_section.markdown("**Bitte stellen Sie sicher, dass folgende Tabs mit den jeweiligen Spalten hinterlegt sind:**")
             content_section.markdown("""
                 * ***vInfo***
@@ -105,7 +106,7 @@ with content_section:
 
         # Set bar chart setting to static for both  charts
         bar_chart_config = {'staticPlot': True}
-        bar_chart_marker_colors = ['#F36D21', '#034EA2', '#034EA2', '#034EA2', '#B0D235']
+        bar_chart_marker_colors = ['#F36D21', '#4C4C4E', '#6560AB', '#3ABFEF', '#034EA2']
 
         # Generate 2 Main Columns
         column_1, column_2 = st.columns(2)
@@ -160,10 +161,34 @@ with content_section:
         # Main Section for VM Details
         savings_vCPU = int(vCPU_overview.iat[0,1])-int(vCPU_overview.iat[4,1])
         savings_vMemory = int(vMemory_overview.data.iat[0,1])-int(vMemory_overview.data.iat[4,1])
-        st.markdown(f"<h5 style='text-align: center; color:#034EA2;'> In Summe besteht ein mögliches Optimierungs-Potenzial von {savings_vCPU} vCPUs und {savings_vMemory} GiB Memory (basierend auf 'provisioned' vs '95th Percentile' Ressourcen-Bedarf).</h5>", unsafe_allow_html=True)
-        st.markdown("---")
-        st.markdown('#### VM Details:')
-        st.markdown("In der folgenden Tabelle können Sie die vCPU & vMemory Details der einzelnen VMs genauer betrachten. Anhand der Filter können Sie bestimmte Spalten ein und oder ausblenden und so verschiedene umfangreiche Ansichten erhalten. Die Spalten lassen sich auf oder absteigend sortieren und rechts neben der Tabelle erscheint beim darüber fahren ein Vergrößern-Symbol um die Tabelle auf Fullscreen zu vergrößern. Zuletzt lässt sich die Tabelle als Excel File speichern. Die Daten in der Tabelle untergliedern sich dabei zum einen in die jeweiligen '%' und daraus berechneten Total Werte für vCPU & Memory '#'.")
+        st.markdown(f"<h5 style='text-align: center; color:#034EA2;'> In Summe besteht ein mögliches VM Optimierungs-Potenzial von {savings_vCPU} vCPUs und {savings_vMemory} GiB Memory (basierend auf 'provisioned' vs '95th Percentile' Ressourcen-Bedarf).</h5>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; color:#000000; background-color: #F5F5F5;'>vCPU & vMemory Auslastungs-Verteilung:</h4>", unsafe_allow_html=True)
+
+        # Generate 2 Columns for vCPu & VMemory Overview tables & graphs
+        column_1_2, column_2_2 = st.columns(2)
+        with column_1_2:
+            scatter_chart_vCPU = px.scatter(        
+                custom_df,
+                x = "vCPU 95th Percentile %",
+                y = "vCPUs",
+                hover_name="VM Name",
+                hover_data=['vCPU 95th Percentile #']
+            )
+            scatter_chart_vCPU.update_traces(marker=dict(size=6,color='#034EA2'))
+            st.plotly_chart(scatter_chart_vCPU,use_container_width=True)
+        with column_2_2:
+            scatter_chart_vMemory = px.scatter(        
+                custom_df,
+                x = "vMemory 95th Percentile %",
+                y = "vMemory Size (GiB)",
+                hover_name="VM Name",
+                hover_data=['vMemory 95th Percentile #']
+            )
+            scatter_chart_vMemory.update_traces(marker=dict(size=6,color='#034EA2'))
+            st.plotly_chart(scatter_chart_vMemory,use_container_width=True)
+
+        st.markdown("<h4 style='text-align: center; color:#000000; background-color: #F5F5F5;'>VM Details:</h4>", unsafe_allow_html=True)
+        st.markdown("In der folgenden Tabelle können Sie die vCPU & vMemory Details der einzelnen VMs genauer betrachten. Anhand der Filter können Sie bestimmte Spalten ein und oder ausblenden und so verschiedene umfangreiche Ansichten erhalten. Die Spalten lassen sich auf oder absteigend sortieren und rechts neben der Tabelle erscheint beim darüber fahren ein Vergrößern-Symbol um die Tabelle auf Fullscreen zu vergrößern. Die Daten in der Tabelle untergliedern sich dabei zum einen in die jeweiligen '%' und daraus berechneten Total Werte für vCPU & Memory '#'. Zuletzt lässt sich die Tabelle als Excel Datei speichern.")
 
         # Generate a Multiselect Filter for Column selection, by default only recommended columns are shown
         vm_detail_columns_to_show = st.multiselect(

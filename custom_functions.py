@@ -149,7 +149,7 @@ def drop_columns_based_on_multiselect(new_df, vm_detail_columns_to_show):
     
     return new_df
 
-# Generate dataframe as excel file for download
+# Generate dataframe as excel file for downloads
 #@st.cache - I do not think cache helps here, as it gets regenerated after a change / download
 def download_as_excel(output_to_show):
     output = BytesIO()

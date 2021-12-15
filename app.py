@@ -4,6 +4,7 @@ import streamlit as st  # pip install streamlit
 import custom_functions
 import pandas as pd
 import numpy as np
+from google.cloud import storage
 import warnings
 
 ######################
@@ -35,12 +36,12 @@ content_section = st.container() # Content of page - either error message if wro
 
 with st.sidebar:
     st.markdown('# **Upload**')
-    uploaded_file = st.sidebar.file_uploader(label="Laden Sie Ihre Excel basierte Collector Auswertung hier hoch.", type=['xlsx'])   
+    uploaded_file = st.sidebar.file_uploader(label="Laden Sie Ihre Excel basierte Collector Auswertung hier hoch.", type=['xlsx'])
 
     if uploaded_file is not None:
         try:
             # load excel, filter our relevant tabs and columns, merge all in one dataframe
-            main_df = custom_functions.get_data_from_excel(uploaded_file)
+            main_df = custom_functions.get_data_from_excel(uploaded_file)            
 
             st.sidebar.markdown('---')
             st.sidebar.markdown('## **Filter**')

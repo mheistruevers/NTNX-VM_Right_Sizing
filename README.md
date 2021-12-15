@@ -5,7 +5,7 @@ Nutanix Collector is a completly free Windows / Mac or Linux based application t
 
 Often VM's are heavily oversized which leads to wasted ressources and unneccessary overhead. Therefore the **Nutanix Collector VM Right Sizing Analysis** Tool enables you to get a good overview of the configured vs consumed ressources in order to derive meaningful insights on the analyzed environment.  
 
-If you are interested, find out more at the [*Nutanix Collector VM Right Sizing Analysis - WebApp](https://share.streamlit.io/mstenke/ntnx-vm_right_sizing/main/app.py) and get started right away.
+If you are interested, find out more at the [Nutanix Collector VM Right Sizing Analysis - WebApp](https://share.streamlit.io/mstenke/ntnx-vm_right_sizing/main/app.py) and get started right away.
 ___
 
 ## Built maily with

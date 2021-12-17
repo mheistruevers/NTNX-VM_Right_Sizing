@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 from io import BytesIO
 import streamlit as st
-from google.cloud import storage
 
 
 # Generate Dataframe from Excel and make neccessary adjustment for easy consumption later on
@@ -53,7 +52,7 @@ def get_data_from_excel(uploaded_file):
 
     # Change column order to be more logic & easier to read
     main_df = main_df[['VM Name', 'Power State', 'Cluster Name', 'vCPUs', 'vCPU Peak %', 'vCPU Peak #', 'vCPU Average %', 'vCPU Average #', 'vCPU Median %', 'vCPU Median #', 'vCPU 95th Percentile %', 'vCPU 95th Percentile #', 'vMemory Size (GiB)', 'vMemory Peak %', 'vMemory Peak #', 'vMemory Average %', 'vMemory Average #', 'vMemory Median %', 'vMemory Median #', 'vMemory 95th Percentile %', 'vMemory 95th Percentile #']]
-
+    
     return main_df
 
 # Generate vCPU Values for Peak, Median, Average & 95 Percentile
@@ -153,20 +152,44 @@ def drop_columns_based_on_multiselect(new_df, vm_detail_columns_to_show):
 
 # Generate dataframe as excel file for downloads
 #@st.cache - I do not think cache helps here, as it gets regenerated after a change / download
-def download_as_excel(output_to_show):
+def download_as_excel(output_to_show, vCPU_overview, vMemory_overview):
     output = BytesIO()
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
-    output_to_show.to_excel(writer, index=False, sheet_name='Auswertung', startrow=4, startcol=0)
+    output_to_show.to_excel(writer, index=False, sheet_name='VM Details', startrow=4, startcol=0)
     workbook = writer.book
-    worksheet_auswertung = writer.sheets['Auswertung']
+    worksheet_vm_details = writer.sheets['VM Details']
     header_format = workbook.add_format({'bold': True, 'font_color': '#034EA2','font_size':18})
+    subheader_format = workbook.add_format({'bold': True, 'font_color': '#000000','font_size':14})
     
     for col in range(21): #set column width for cells
-        worksheet_auswertung.set_column(col, col, 25)
-    worksheet_auswertung.write(0, 0, "VM Right Sizing Analyse (powered by Nutanix Collector)",header_format)
-    worksheet_auswertung.write(2, 0, "Bitte Anmerkungen auf gesondertem Tabellenblatt beachten.")
-    worksheet_auswertung.freeze_panes(5, 0)
-    format_dataframe_as_table(writer, 'Auswertung', output_to_show.data)
+        worksheet_vm_details.set_column(col, col, 25)
+    worksheet_vm_details.write(0, 0, "VM Right Sizing Analyse - VM Details",header_format)
+    worksheet_vm_details.write(2, 0, "Bitte Anmerkungen auf gesondertem Tabellenblatt beachten.")
+    worksheet_vm_details.freeze_panes(5, 0)
+    format_dataframe_as_table(writer, 'VM Details', output_to_show.data)
+
+    vCPU_overview.to_excel(writer, index=False, sheet_name='Uebersicht', startrow=4, startcol=0)
+    vMemory_overview.to_excel(writer, index=False, sheet_name='Uebersicht', startrow=21, startcol=0)
+    worksheet_uebersicht = writer.sheets['Uebersicht']
+    
+    for col in range(2): #set column width for cells
+        worksheet_uebersicht.set_column(col, col, 25)
+    worksheet_uebersicht.write(0, 0, "VM Right Sizing Analyse - Uebersicht",header_format)
+    worksheet_uebersicht.write(2, 0, "vCPU Gesamt-Auswertung:", subheader_format)
+    worksheet_uebersicht.write(19, 0, "vMemory Gesamt-Auswertung:", subheader_format)
+
+    # Charts are independent of worksheets
+    chart_vcpu = workbook.add_chart({'type': 'column'})
+    chart_vcpu.set_legend({'none': True})
+    chart_vram = workbook.add_chart({'type': 'column'})
+    chart_vram.set_legend({'none': True})
+    diff_color_list = list([{ 'fill': { 'color':'#F36D21' }}, { 'fill': { 'color':'#4C4C4E' }}, { 'fill': { 'color':'#6560AB' }}, { 'fill': { 'color':'#3ABFEF' }}, { 'fill': { 'color':'#034EA2' }}])
+
+    chart_vcpu.add_series({'categories': '=Uebersicht!$A$6:$A$10','values': '=Uebersicht!$B$6:$B$10', 'points':diff_color_list })
+    worksheet_uebersicht.insert_chart('D3', chart_vcpu)
+
+    chart_vram.add_series({'categories': '=Uebersicht!$A$23:$A$27','values': '=Uebersicht!$B$23:$B$27', 'points':diff_color_list })
+    worksheet_uebersicht.insert_chart('D20', chart_vram)
 
     worksheet_anmerkungen = workbook.add_worksheet('Anmerkungen')
     worksheet_anmerkungen.write(0, 0, "Anmerkungen",header_format)
@@ -176,7 +199,8 @@ def download_as_excel(output_to_show):
     worksheet_anmerkungen.write(3, 0, "Stellen Sie bitte sicher, dass die Auswertung für einen repräsentativen Zeitraum durchgeführt wurde. Für die ausgeschalteten VMs stehen (abhängig davon, wie lange diese bereits ausgeschaltet sind) i.d.R. keine Performance Werte (Peak, Average, Median oder 95th Percentile) zur Verfügung - in diesem Fall werden die provisionierten / zugewiesenen Werte verwendet.", cell_format)
     worksheet_anmerkungen.write(4, 0, "Auch werden bei allen Performance-basierten Werten 20% zusätzlicher Puffer mit eingerechnet. Generell ist die Empfehlung sich bei den Performance Werten an den 95th Percentile Werten zu orientieren, da diese die tatsächliche Auslastung am besten repräsentieren und nicht durch ggf. kurzzeitige Lastspitzen verfälscht werden.", cell_format)
     worksheet_anmerkungen.write(5, 0, "Die gezeigten Empfehlungen orientieren sich rein an der vCPU & vMemory Auslastung der VM – ohne die darin laufenden Anwendungen & deren Anforderungen zu berücksichtigen. Daher obliegt Ihnen eine abschließende Bewertung, ob die getroffenen Right Sizing Empfehlungen bei Ihnen durchführbar bzw. supported sind.", cell_format)
-    worksheet_anmerkungen.write(7, 0, "Disclaimer: Die automatische Auswertung basiert auf einem Hobby Projekt und dient primär als Anhaltspunkt für ein mögliches Right Sizing - keine Garantie auf Vollständigkeit oder Korrektheit der Auswertung / Daten.", cell_format)
+    worksheet_anmerkungen.write(6, 0, "Solch ein VM Right Sizing bietet sich vor der Beschaffung einer neuen Infrastruktur an, sollte aber auch darüber hinaus regelmäßig und wiederkehrend durchgeführt werden. Nutanix bietet diese Funktionalität ebenfalls bereits als einen integrierten Bestandteil des Prism PRO Funktionsumfanges. Hierbei werden umfangreichere Analysen durchgeführt die sich über einen längeren Zeitraum erstrecken und weitere Mehrwerte bieten.", cell_format)
+    worksheet_anmerkungen.write(8, 0, "Disclaimer: Die automatische Auswertung basiert auf einem Hobby Projekt und dient primär als Anhaltspunkt für ein mögliches Right Sizing - keine Garantie auf Vollständigkeit oder Korrektheit der Auswertung / Daten.", cell_format) 
 
     writer.save()
     processed_data = output.getvalue()
@@ -193,3 +217,35 @@ def format_dataframe_as_table(writer, sheet_name, output_to_show):
     tbl_corner = right_letter + str(bottom_num+4)
     worksheet = writer.sheets[sheet_name]
     worksheet.add_table('A5:' + tbl_corner,  {'columns':tbl_hdr})
+
+# generate the values required for the savings text string
+def get_savings_value(performance_type_selected,vCPU_overview,vMemory_overview):
+
+    if performance_type_selected == '95th Percentile':
+        savings_vCPU = int(vCPU_overview.iat[0,1])-int(vCPU_overview.iat[4,1])
+        savings_vMemory = int(vMemory_overview.iat[0,1])-int(vMemory_overview.iat[4,1])
+    elif performance_type_selected == "Peak":
+        savings_vCPU = int(vCPU_overview.iat[0,1])-int(vCPU_overview.iat[1,1])
+        savings_vMemory = int(vMemory_overview.iat[0,1])-int(vMemory_overview.iat[1,1])
+    elif performance_type_selected == "Average":
+        savings_vCPU = int(vCPU_overview.iat[0,1])-int(vCPU_overview.iat[2,1])
+        savings_vMemory = int(vMemory_overview.iat[0,1])-int(vMemory_overview.iat[2,1])
+    elif performance_type_selected == "Median":
+        savings_vCPU = int(vCPU_overview.iat[0,1])-int(vCPU_overview.iat[3,1])
+        savings_vMemory = int(vMemory_overview.iat[0,1])-int(vMemory_overview.iat[3,1])
+
+    return savings_vCPU, savings_vMemory
+
+# generates the default columns to show of the tables based on selectbox value
+def get_default_columns_to_show(performance_type_selected):
+
+    if performance_type_selected == '95th Percentile':
+        columns_to_show = [0,1,2,3,10,11,12,19,20]
+    elif performance_type_selected == "Peak":
+        columns_to_show = [0,1,2,3,4,5,12,13,14]
+    elif performance_type_selected == "Average":
+        columns_to_show = [0,1,2,3,6,7,12,15,16]
+    elif performance_type_selected == "Median":
+        columns_to_show = [0,1,2,3,8,9,12,17,18]
+
+    return columns_to_show

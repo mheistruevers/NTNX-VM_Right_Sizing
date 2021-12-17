@@ -4,8 +4,8 @@ import streamlit as st  # pip install streamlit
 import custom_functions
 import pandas as pd
 import numpy as np
-from google.cloud import storage
 import warnings
+import time
 
 ######################
 # Page Config
@@ -57,6 +57,8 @@ with st.sidebar:
                 options=sorted(main_df["Power State"].unique()),
                 default=sorted(main_df["Power State"].unique())
             )
+
+            performance_type_selected = st.sidebar.selectbox('Performance Vergleichswerte definieren:', ('95th Percentile','Peak','Average','Median'))
 
             # Apply Multiselect Filter to dataframe
             custom_df = main_df.query("`Cluster Name`==@vCluster_selected").query("`Power State`==@powerstate_selected")
@@ -117,13 +119,10 @@ with content_section:
             st.markdown("<h4 style='text-align: center; color:#000000; background-color: #F5F5F5;'>vMemory Gesamt-Auswertung:</h4>", unsafe_allow_html=True)
         
         # Generate 4 Columns for vCPu & VMemory Overview tables & graphs
-        column_1_1, column_2_1, column_3_1, column_4_1 = st.columns(4)
+        column_1_1, column_2_1, column_3_1, column_4_1 = st.columns([1,1.7,1,1.7])
         
         with column_1_1:
             # Unfortunately no vertical center implemented in streamlit yet - therefore the following workaround needed
-            st.write('') 
-            st.write('') 
-            st.write('')
             st.write('')
             st.write('')
             st.write('')
@@ -145,9 +144,6 @@ with content_section:
             st.write('')
             st.write('')
             st.write('')
-            st.write('')
-            st.write('')
-            st.write('')
             st.table(vMemory_overview)
 
         with column_4_1:
@@ -160,43 +156,48 @@ with content_section:
             st.plotly_chart(bar_chart_vMemory,use_container_width=True, config=bar_chart_config)
 
         # Main Section for VM Details
-        savings_vCPU = int(vCPU_overview.iat[0,1])-int(vCPU_overview.iat[4,1])
-        savings_vMemory = int(vMemory_overview.data.iat[0,1])-int(vMemory_overview.data.iat[4,1])
-        st.markdown(f"<h5 style='text-align: center; color:#034EA2;'> In Summe besteht ein mögliches VM Optimierungs-Potenzial von {savings_vCPU} vCPUs und {savings_vMemory} GiB Memory (basierend auf 'provisioned' vs '95th Percentile' Ressourcen-Bedarf).</h5>", unsafe_allow_html=True)
+        savings_vCPU, savings_vMemory = custom_functions.get_savings_value(performance_type_selected,vCPU_overview,vMemory_overview.data)
+        st.markdown(f"<h5 style='text-align: center; color:#034EA2;'> In Summe besteht ein mögliches VM Optimierungs-Potenzial von {savings_vCPU} vCPUs und {savings_vMemory} GiB Memory (basierend auf 'Provisioned' vs '{performance_type_selected}' Ressourcen-Bedarf).</h5>", unsafe_allow_html=True)
         st.markdown("<h4 style='text-align: center; color:#000000; background-color: #F5F5F5;'>vCPU & vMemory Auslastungs-Verteilung:</h4><br />", unsafe_allow_html=True)
         st.markdown("Die folgenden zwei Diagramme geben einen Überblick wie sich die einzelnen VMs hinsichtlich Ihrer zugewiesenen und tatsächlich verwendeter Ressourcen einsortieren lassen - jeder Punkt repräsentiert dabei eine VM. Das Diagramm ist interaktiv und bietet beim mit der Maus darüber fahren weitergehende Informationen zur der jeweiligen VM.")
 
+        background_image = dict(source="https://avatars.githubusercontent.com/u/6165865?s=280&v=4", xref="paper", yref="paper", x=0.5, y=0.5, sizex=1, sizey=1, xanchor="center", yanchor="middle", opacity=0.04, layer="below", sizing="contain")
         # Generate 2 Columns for vCPu & VMemory Overview tables & graphs
         column_1_2, column_2_2 = st.columns(2)
         with column_1_2:
             scatter_chart_vCPU = px.scatter(        
                 custom_df,
-                x = "vCPU 95th Percentile %",
+                x = "vCPU "+performance_type_selected+" %",
                 y = "vCPUs",
                 hover_name="VM Name",
-                hover_data=['vCPU 95th Percentile #']
+                hover_data=["vCPU "+performance_type_selected+" #"]
             )
             scatter_chart_vCPU.update_traces(marker=dict(size=6,color='#034EA2'))
+
+            scatter_chart_vCPU.add_layout_image(background_image)
             st.plotly_chart(scatter_chart_vCPU,use_container_width=True)
         with column_2_2:
             scatter_chart_vMemory = px.scatter(        
                 custom_df,
-                x = "vMemory 95th Percentile %",
+                x = "vMemory "+performance_type_selected+" %",
                 y = "vMemory Size (GiB)",
                 hover_name="VM Name",
-                hover_data=['vMemory 95th Percentile #']
+                hover_data=["vMemory "+performance_type_selected+" #"]
             )
             scatter_chart_vMemory.update_traces(marker=dict(size=6,color='#034EA2'))
+            scatter_chart_vMemory.add_layout_image(background_image)
             st.plotly_chart(scatter_chart_vMemory,use_container_width=True)
 
         st.markdown("<h4 style='text-align: center; color:#000000; background-color: #F5F5F5;'>VM Details:</h4><br/>", unsafe_allow_html=True)
         st.markdown("In der folgenden Tabelle können Sie die vCPU & vMemory Details der einzelnen VMs genauer betrachten. Anhand der Filter können Sie bestimmte Spalten ein und oder ausblenden und so verschiedene umfangreiche Ansichten erhalten. Die Spalten lassen sich auf oder absteigend sortieren und rechts neben der Tabelle erscheint beim darüber fahren ein Vergrößern-Symbol um die Tabelle auf Fullscreen zu vergrößern. Die Daten in der Tabelle untergliedern sich dabei zum einen in die jeweiligen '%' und daraus berechneten Total Werte für vCPU & Memory '#'. Zuletzt lässt sich die Tabelle als Excel Datei speichern.")
 
         # Generate a Multiselect Filter for Column selection, by default only recommended columns are shown
+        default_columns = custom_functions.get_default_columns_to_show(performance_type_selected)
+
         vm_detail_columns_to_show = st.multiselect(
             'Wählen Sie die Spalten die angezeigt werden sollen:',
             options=list(custom_df.columns.values),
-            default=list(custom_df.iloc[:, [0,1,2,3,10,11,12,19,20]]) # Column index of deafult columns to display
+            default=list(custom_df.iloc[:, default_columns]) # Column index of deafult columns to display
             )
 
         # Generate Dataframe to be shown on streamlit website
@@ -208,5 +209,8 @@ with content_section:
         submit = form.form_submit_button('Aktuelle Auswertung als Excel herunterladen?')
 
         if submit:
+            with st.spinner('Download wird vorbereitet...'):
+                time.sleep(5)
+            st.success('Done!')
             st.download_button(
-                label='⏬ Download', data=custom_functions.download_as_excel(output_to_show), file_name='VM_Right_Sizing_Analyse.xlsx')
+                label='⏬ Download', data=custom_functions.download_as_excel(output_to_show,vCPU_overview,vMemory_overview), file_name='VM_Right_Sizing_Analyse.xlsx')

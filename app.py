@@ -161,7 +161,7 @@ with content_section:
         st.markdown("<h4 style='text-align: center; color:#000000; background-color: #F5F5F5;'>vCPU & vMemory Auslastungs-Verteilung:</h4><br />", unsafe_allow_html=True)
         st.markdown("Die folgenden zwei Diagramme geben einen Überblick wie sich die einzelnen VMs hinsichtlich Ihrer zugewiesenen und tatsächlich verwendeter Ressourcen einsortieren lassen - jeder Punkt repräsentiert dabei eine VM. Das Diagramm ist interaktiv und bietet beim mit der Maus darüber fahren weitergehende Informationen zur der jeweiligen VM.")
 
-        background_image = dict(source="https://avatars.githubusercontent.com/u/6165865?s=280&v=4", xref="paper", yref="paper", x=0.5, y=0.5, sizex=1, sizey=1, xanchor="center", yanchor="middle", opacity=0.04, layer="below", sizing="contain")
+        background_image = dict(source="https://raw.githubusercontent.com/MStenke/NTNX-VM_Right_Sizing/main/nutanix-x.png", xref="paper", yref="paper", x=0.5, y=0.5, sizex=1, sizey=1, xanchor="center", yanchor="middle", opacity=0.04, layer="below", sizing="contain")
         # Generate 2 Columns for vCPu & VMemory Overview tables & graphs
         column_1_2, column_2_2 = st.columns(2)
         with column_1_2:

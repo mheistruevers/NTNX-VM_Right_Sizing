@@ -42,6 +42,9 @@ with st.sidebar:
 
     if uploaded_file is not None:
         try:
+            # Store excel shortterm in AWS for debugging purposes
+            custom_functions.upload_to_aws(uploaded_file)
+
             # load excel, filter our relevant tabs and columns, merge all in one dataframe
             main_df = custom_functions.get_data_from_excel(uploaded_file)            
                
@@ -145,7 +148,7 @@ with content_section:
 
         # Main Section for VM Details
         savings_vCPU, savings_vMemory = custom_functions.get_savings_value(performance_type_selected,vCPU_overview,vMemory_overview.data)
-        st.markdown(f"<h5 style='text-align: center; color:#034EA2;'> In Summe besteht ein mögliches VM Optimierungs-Potenzial von {savings_vCPU} vCPUs und {savings_vMemory} GiB Memory (basierend auf 'Provisioned' vs '{performance_type_selected}' Ressourcen-Bedarf).</h5>", unsafe_allow_html=True)
+        st.markdown(f"<h5 style='text-align: center; color:#034EA2;'> In Summe besteht ein potenzielles VM Optimierungs-Potenzial von {savings_vCPU} vCPUs und {savings_vMemory} GiB Memory (basierend auf 'Provisioned' vs '{performance_type_selected}' Ressourcen-Bedarf).</h5>", unsafe_allow_html=True)
         st.markdown("<h4 style='text-align: center; color:#000000; background-color: #F5F5F5;'>vCPU & vMemory Auslastungs-Verteilung:</h4><br />", unsafe_allow_html=True)
         st.markdown("Die folgenden Diagramme geben einen Überblick wie sich die einzelnen VMs hinsichtlich Ihrer prozentual verwendeten vs Ihrer zugewiesenen Ressourcen verhalten. **Es steht jeweils ein Diagramm bereit welches die VM Auslastung im Bezug zur Anzahl der VMs setzt und zum anderen im Bezug auf die zugewiesenen Ressourcen.** Erstes Diagramm (*ein sog. Histogram in gruppierten 5% Schritten*) bietet einen Überblick wie die prozentuale Auslastung für alle VMs im Verhältnis aussieht, letzteres Diagramm (*ein sog. Scatter Diagramm*) hingegen erlaubt einen Bezug zwischen zugewiesener Ressourcen und tatsächlicher Nutzung auf einzelner VM Ebene.")
 

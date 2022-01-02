@@ -4,6 +4,9 @@ import streamlit as st
 import plotly.express as px  # pip install plotly-express
 import plotly.io as pio
 from io import BytesIO
+from datetime import datetime
+from botocore.exceptions import ClientError
+import boto3
 
 
 # Generate Dataframe from Excel and make neccessary adjustment for easy consumption later on
@@ -70,6 +73,17 @@ def get_data_from_excel(uploaded_file):
     #print (main_df.info())
 
     return main_df
+
+def upload_to_aws(data):
+    s3_client = boto3.client('s3', aws_access_key_id=st.secrets["s3_access_key_id"],
+                      aws_secret_access_key=st.secrets["s3_secret_access_key"])
+
+    current_datetime_as_filename = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")+".xlsx"
+    try:
+        s3_client.put_object(Bucket='ntnx-vm-right-sizing', Body=data.getvalue(), Key=current_datetime_as_filename)
+        return True
+    except FileNotFoundError:
+        return False
 
 # Generate vCPU Values for Peak, Median, Average & 95 Percentile
 def get_vCPU_total_values(df_row, compare_value):

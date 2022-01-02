@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
-from io import BytesIO
 import streamlit as st
+import plotly.express as px  # pip install plotly-express
+import plotly.io as pio
+from io import BytesIO
 
 
 # Generate Dataframe from Excel and make neccessary adjustment for easy consumption later on
@@ -17,8 +19,11 @@ def get_data_from_excel(uploaded_file):
 
     # Create df for each tab with only relevant columns
     df_vInfo = df.parse('vInfo', usecols=vInfo_cols_to_use)
+    df_vInfo.convert_dtypes().dtypes # autoset datatypes to reduce memory consumption    
     df_vCPU = df.parse('vCPU', usecols=vCPU_cols_to_use)
+    df_vCPU.convert_dtypes().dtypes # autoset datatypes to reduce memory consumption    
     df_vMemory = df.parse('vMemory', usecols=vMemory_cols_to_use)
+    df_vMemory.convert_dtypes().dtypes # autoset datatypes to reduce memory consumption    
 
     # Rename columns to make it shorter
     df_vCPU.rename(columns={'95th Percentile % (recommended)': '95th Percentile %'}, inplace=True)
@@ -33,18 +38,27 @@ def get_data_from_excel(uploaded_file):
     df_vCPU.rename(columns={'vCPU vCPUs': 'vCPUs'}, inplace=True)
     df_vMemory.columns = 'vMemory ' + df_vMemory.columns.values
 
-    # Add / Generate Total Columns from vCPU performance percentage data
-    df_vCPU['vCPUs'] = df_vCPU['vCPUs'].astype(int)
-    df_vCPU.loc[:,'vCPU Peak #'] = df_vCPU.apply(lambda row: get_vCPU_total_values(row, 'vCPU Peak %'), axis=1).astype(int)
-    df_vCPU.loc[:,'vCPU Average #'] = df_vCPU.apply(lambda row: get_vCPU_total_values(row, 'vCPU Average %'), axis=1).astype(int)
-    df_vCPU.loc[:,'vCPU Median #'] = df_vCPU.apply(lambda row: get_vCPU_total_values(row, 'vCPU Median %'), axis=1).astype(int)
-    df_vCPU.loc[:,'vCPU 95th Percentile #'] = df_vCPU.apply(lambda row: get_vCPU_total_values(row, 'vCPU 95th Percentile %'), axis=1).astype(int)
+    # Add / Generate Total Columns from vCPU performance percentage data & convert columns to right datatype to reduce memory coonsumption
+    df_vCPU['vCPUs'] = df_vCPU['vCPUs'].astype(np.int16)
+    df_vCPU['vCPU Peak %'] = df_vCPU['vCPU Peak %'].astype(np.float32)
+    df_vCPU.loc[:,'vCPU Peak #'] = df_vCPU.apply(lambda row: get_vCPU_total_values(row, 'vCPU Peak %'), axis=1).astype(np.int16)
+    df_vCPU['vCPU Average %'] = df_vCPU['vCPU Average %'].astype(np.float32)
+    df_vCPU.loc[:,'vCPU Average #'] = df_vCPU.apply(lambda row: get_vCPU_total_values(row, 'vCPU Average %'), axis=1).astype(np.int16)
+    df_vCPU['vCPU Median %'] = df_vCPU['vCPU Median %'].astype(np.float32)
+    df_vCPU.loc[:,'vCPU Median #'] = df_vCPU.apply(lambda row: get_vCPU_total_values(row, 'vCPU Median %'), axis=1).astype(np.int16)
+    df_vCPU['vCPU 95th Percentile %'] = df_vCPU['vCPU 95th Percentile %'].astype(np.float32)
+    df_vCPU.loc[:,'vCPU 95th Percentile #'] = df_vCPU.apply(lambda row: get_vCPU_total_values(row, 'vCPU 95th Percentile %'), axis=1).astype(np.int16)
 
-    # Add / Generate Total Columns from vMemory performance percentage data
-    df_vMemory.loc[:,'vMemory Peak #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory Peak %'), axis=1)
-    df_vMemory.loc[:,'vMemory Average #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory Average %'), axis=1)
-    df_vMemory.loc[:,'vMemory Median #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory Median %'), axis=1)
-    df_vMemory.loc[:,'vMemory 95th Percentile #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory 95th Percentile %'), axis=1)
+    # Add / Generate Total Columns from vMemory performance percentage data & convert columns to right datatype to reduce memory coonsumption
+    df_vMemory['vMemory Size (GiB)'] = df_vMemory['vMemory Size (GiB)'].astype(np.float32)
+    df_vMemory['vMemory Peak %'] = df_vMemory['vMemory Peak %'].astype(np.float32)
+    df_vMemory.loc[:,'vMemory Peak #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory Peak %'), axis=1).astype(np.float32)
+    df_vMemory['vMemory Average %'] = df_vMemory['vMemory Average %'].astype(np.float32)
+    df_vMemory.loc[:,'vMemory Average #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory Average %'), axis=1).astype(np.float32)
+    df_vMemory['vMemory Median %'] = df_vMemory['vMemory Median %'].astype(np.float32)
+    df_vMemory.loc[:,'vMemory Median #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory Median %'), axis=1).astype(np.float32)
+    df_vMemory['vMemory 95th Percentile %'] = df_vMemory['vMemory 95th Percentile %'].astype(np.float32)
+    df_vMemory.loc[:,'vMemory 95th Percentile #'] = df_vMemory.apply(lambda row: get_vMemory_total_values(row, 'vMemory 95th Percentile %'), axis=1).astype(np.float32)
 
     df_vinfo_vcpu_merged = pd.merge(df_vInfo, df_vCPU, left_on="MOID", right_on="vCPU MOID", how="left")
     main_df = pd.merge(df_vinfo_vcpu_merged, df_vMemory, left_on="MOID", right_on="vMemory MOID", how="left")
@@ -52,7 +66,9 @@ def get_data_from_excel(uploaded_file):
 
     # Change column order to be more logic & easier to read
     main_df = main_df[['VM Name', 'Power State', 'Cluster Name', 'vCPUs', 'vCPU Peak %', 'vCPU Peak #', 'vCPU Average %', 'vCPU Average #', 'vCPU Median %', 'vCPU Median #', 'vCPU 95th Percentile %', 'vCPU 95th Percentile #', 'vMemory Size (GiB)', 'vMemory Peak %', 'vMemory Peak #', 'vMemory Average %', 'vMemory Average #', 'vMemory Median %', 'vMemory Median #', 'vMemory 95th Percentile %', 'vMemory 95th Percentile #']]
-    
+
+    #print (main_df.info())
+
     return main_df
 
 # Generate vCPU Values for Peak, Median, Average & 95 Percentile
@@ -98,6 +114,7 @@ def round_decimals_up(number:float, decimals:int=2):
     return np.ceil(number * factor) / factor
 
 # Generate vCPU Overview Section for streamlit column 1+2
+@st.cache
 def generate_vCPU_overview_df(custom_df):
 
     vCPU_provisioned = int(custom_df["vCPUs"].sum())
@@ -113,6 +130,7 @@ def generate_vCPU_overview_df(custom_df):
     return vCPU_overview_df
 
 # Generate vMemory Overview Section for streamlit column 1+2
+@st.cache(allow_output_mutation=True)
 def generate_vMemory_overview_df(custom_df):
 
     vMemory_provisioned = custom_df["vMemory Size (GiB)"].sum()
@@ -125,16 +143,112 @@ def generate_vMemory_overview_df(custom_df):
     vMemory_overview_second_column = [vMemory_provisioned, vMemory_peak, vMemory_average, vMemory_median, vMemory_95_percentile]
     vMemory_overview_df.loc[:,'GiB'] = vMemory_overview_second_column
 
-     # Style data values to two decimals and set default value in case of NAN
+    # Style data values to two decimals and set default value in case of NAN
     vMemory_overview_df = vMemory_overview_df.style.format(precision=2, na_rep='nicht vorhanden') 
    
     return vMemory_overview_df
+
+# Generate Bar charts for vCPU & vMemory
+@st.cache
+def generate_bar_charts(df_vCPU_or_vMemory, y_axis_name):
+
+    bar_chart_names = ['Provisioned', 'Peak', 'Average', 'Median', '95th Percentile']
+
+    bar_chart = px.bar(
+                df_vCPU_or_vMemory,
+                x = "",
+                y = y_axis_name,
+                text=bar_chart_names
+            )
+    bar_chart.update_traces(marker_color=['#F36D21', '#4C4C4E', '#6560AB', '#3ABFEF', '#034EA2'])
+    bar_chart.update_layout(
+            margin=dict(l=10, r=10, t=20, b=10,pad=4), autosize=True, height = 350, 
+            xaxis={'visible': False, 'showticklabels': False}
+        )
+    bar_chart.update_traces(texttemplate='%{text}', textposition='outside',textfont_size=14)
+
+    background_image = dict(source="https://raw.githubusercontent.com/MStenke/NTNX-VM_Right_Sizing/main/nutanix-x.png", xref="paper", yref="paper", x=0.5, y=0.5, sizex=0.95, sizey=0.95, xanchor="center", yanchor="middle", opacity=0.04, layer="below", sizing="contain")
+
+    bar_chart.add_layout_image(background_image)
+
+    bar_chart_config = { 'staticPlot': True}
+
+    return bar_chart, bar_chart_config
+
+# Generate Histogram charts for vCPU & vMemory
+@st.cache
+def generate_histogram_charts(custom_df, y_axis_name, performance_type_selected):
+
+    if y_axis_name == "vMemory Size (GiB)":
+        prefix_string = "vMemory "
+    else:
+        prefix_string = "vCPU "
+
+    counts, bins = np.histogram(custom_df[prefix_string + performance_type_selected+" %"] , bins=range(0, 105, 5))
+    bins = 0.5 * (bins[:-1] + bins[1:])
+
+    histogram_chart = px.bar(
+            x=bins,
+            y=counts, 
+            labels={'x':prefix_string + performance_type_selected+" %", 'y':'Anzahl VMs'},
+            text=np.where(counts>0,counts,'')            
+        )
+
+    histogram_chart.update_layout(
+            margin=dict(l=10, r=10, t=20, b=10,pad=4), autosize=True,
+            xaxis={'visible': True, 'showticklabels': True}
+        )
+    histogram_chart.update_xaxes(dtick=5)
+
+    histogram_chart.update_traces(marker=dict(color='#034EA2'),texttemplate='%{text}', textposition='outside',textfont_size=14, cliponaxis= False)
+
+    background_image = dict(source="https://raw.githubusercontent.com/MStenke/NTNX-VM_Right_Sizing/main/nutanix-x.png", xref="paper", yref="paper", x=0.5, y=0.5, sizex=0.95, sizey=0.95, xanchor="center", yanchor="middle", opacity=0.04, layer="below", sizing="contain")
+
+    histogram_chart.add_layout_image(background_image)
+
+    histogram_chart_config = {'staticPlot': True}
+    #histogram_chart_config = {}
+
+    return histogram_chart, histogram_chart_config
+
+# Generate Scatter charts for vCPU & vMemory
+@st.cache
+def generate_scatter_charts(custom_df, y_axis_name, performance_type_selected):
+
+    if y_axis_name == "vMemory Size (GiB)":
+        prefix_string = "vMemory "
+    else:
+        prefix_string = "vCPU "
+
+    scatter_chart = px.scatter(        
+                custom_df,
+                x = prefix_string + performance_type_selected+" %",
+                y = y_axis_name,
+                hover_name="VM Name",
+                hover_data=[prefix_string + performance_type_selected+" #"]
+            )
+    scatter_chart.update_traces(marker=dict(size=6,color='#034EA2'))
+
+    scatter_chart.update_layout(
+            margin=dict(l=10, r=10, t=20, b=10,pad=4), autosize=True,
+            xaxis={'visible': True, 'showticklabels': True}
+        )
+
+    background_image = dict(source="https://raw.githubusercontent.com/MStenke/NTNX-VM_Right_Sizing/main/nutanix-x.png", xref="paper", yref="paper", x=0.5, y=0.5, sizex=0.95, sizey=0.95, xanchor="center", yanchor="middle", opacity=0.04, layer="below", sizing="contain")
+
+    scatter_chart.add_layout_image(background_image)
+    scatter_chart_config = { 
+            "displaylogo": False, 'modeBarButtonsToRemove': ['zoom2d', 'toggleSpikelines', 'pan2d', 'select2d',
+             'lasso2d', 'autoScale2d', 'hoverClosestCartesian', 'hoverCompareCartesian']
+        }
+
+    return scatter_chart, scatter_chart_config
 
 # Generate df for output on streamlit dataframe
 def generate_results_df_for_output(custom_df, vm_detail_columns_to_show):
 
     # Style data values to two decimals and set default value in case of NAN
-    custom_df = custom_df.style.format(precision=2, na_rep='nicht vorhanden') 
+    custom_df = custom_df.style.format(precision=2, na_rep='nicht vorhanden')
 
     # drop columns based on multiselect
     custom_df.data = drop_columns_based_on_multiselect(custom_df.data, vm_detail_columns_to_show)
@@ -153,6 +267,7 @@ def drop_columns_based_on_multiselect(new_df, vm_detail_columns_to_show):
 # Generate dataframe as excel file for downloads
 #@st.cache - I do not think cache helps here, as it gets regenerated after a change / download
 def download_as_excel(output_to_show, vCPU_overview, vMemory_overview):
+
     output = BytesIO()
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
     output_to_show.to_excel(writer, index=False, sheet_name='VM Details', startrow=4, startcol=0)
@@ -204,6 +319,7 @@ def download_as_excel(output_to_show, vCPU_overview, vMemory_overview):
 
     writer.save()
     processed_data = output.getvalue()
+
     return processed_data
 
 # Format dataframe as table in excel

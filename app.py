@@ -4,6 +4,7 @@ import streamlit as st  # pip install streamlit
 import custom_functions
 import pandas as pd
 import numpy as np
+from PIL import Image
 import warnings
 import time
 
@@ -23,6 +24,7 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 custom_df = pd.DataFrame() # Initialize Main Dataframe as Empty in order to check whether it has been filled
 warnings.simplefilter("ignore") # Ignore openpyxl Excile File Warning while reading (no default style)
+filter_form_submitted = False
 
 ######################
 # Page sections
@@ -42,23 +44,24 @@ with st.sidebar:
         try:
             # load excel, filter our relevant tabs and columns, merge all in one dataframe
             main_df = custom_functions.get_data_from_excel(uploaded_file)            
-
-            st.sidebar.markdown('---')
-            st.sidebar.markdown('## **Filter**')
+               
+            st.sidebar.markdown('## **Filter**') 
 
             vCluster_selected = st.sidebar.multiselect(
-                "vCluster selektieren:",
+                "vCluster:",
                 options=sorted(main_df["Cluster Name"].unique()),
                 default=sorted(main_df["Cluster Name"].unique())
             )
 
             powerstate_selected = st.sidebar.multiselect(
-                "VM Status selektieren:",
+                "VM Status:",
                 options=sorted(main_df["Power State"].unique()),
-                default=sorted(main_df["Power State"].unique())
+                default="poweredOn"
             )
 
-            performance_type_selected = st.sidebar.selectbox('Performance Vergleichswerte definieren:', ('95th Percentile','Peak','Average','Median'))
+            performance_type_selected = st.sidebar.selectbox(
+                'Performance Vergleichswerte:', ('95th Percentile','Peak','Average','Median')
+            )
 
             # Apply Multiselect Filter to dataframe
             custom_df = main_df.query("`Cluster Name`==@vCluster_selected").query("`Power State`==@powerstate_selected")
@@ -92,9 +95,14 @@ with st.sidebar:
             content_section.exception(e)
 
 with header_section:
+    
     st.markdown("<h1 style='text-align: left; color:#034ea2;'>VM Right Sizing Analyse</h1>", unsafe_allow_html=True)
     st.markdown('Ein Hobby-Projekt von [**Martin Stenke**](https://www.linkedin.com/in/mstenke/) zur einfachen Analyse einer Nutanix Collector Auswertung hinsichtlich VM Right Sizing Empfehlungen.')
-    st.markdown('***Hinweis:*** Der Nutanix Collector kann neben den zugewiesenen vCPU & vMemory Ressourcen an die VMs ebenfalls die Performance Werte der letzten 7 Tage in 30 Minuten Intervallen aus vCenter/Prism auslesen und bietet anhand dessen eine Möglichkeit für VM Right-Sizing Empfehlungen. Stellen Sie bitte sicher, dass die Auswertung für einen repräsentativen Zeitraum durchgeführt wurde. Für die ausgeschalteten VMs stehen (abhängig davon wie lange diese bereits ausgeschaltet sind) i.d.R. keine Performance Werte (Peak, Average, Median oder 95th Percentile) zur Verfügung - in diesem Fall werden die provisionierten / zugewiesenen Werte verwendet. Auch werden bei allen Performance basierten Werten 20% zusätzlicher Puffer mit eingerechnet. **Generell ist die Empfehlung sich bei den Performance Werten an den 95th Percentile Werten zu orientieren, da diese die tatsächliche Auslastung am besten repräsentieren und nicht durch ggf. kurzzeitige Lastspitzen verfälscht werden.**')
+
+    remarks_expander = st.expander(label='Hinweise')
+    with remarks_expander:
+        st.markdown('Der Nutanix Collector kann (im Gegensatz zu z.B. RVTools) neben den zugewiesenen vCPU & vMemory Ressourcen an die VMs ebenfalls die Performance Werte der letzten 7 Tage in 30 Minuten Intervallen aus vCenter/Prism auslesen und bietet anhand dessen eine Möglichkeit für VM Right-Sizing Empfehlungen. Stellen Sie bitte sicher, dass die Auswertung für einen repräsentativen Zeitraum durchgeführt wurde. Für die ausgeschalteten VMs stehen (abhängig davon wie lange diese bereits ausgeschaltet sind) i.d.R. keine Performance Werte (Peak, Average, Median oder 95th Percentile) zur Verfügung - in diesem Fall werden die provisionierten / zugewiesenen Werte verwendet. Auch werden bei allen Performance basierten Werten 20% zusätzlicher Puffer mit eingerechnet. **Generell ist die Empfehlung sich auf die eingeschalteten VMs zu fokussieren und bei den Performance Werten an den 95th Percentile Werten zu orientieren, da diese die tatsächliche Auslastung am besten repräsentieren und nicht durch ggf. kurzzeitige Lastspitzen verfälscht werden.**')
+    
     st.info('***Disclaimer: Hierbei handelt es sich lediglich um ein Hobby Projekt - keine Garantie auf Vollständigkeit oder Korrektheit der Auswertung / Daten.***')
     st.markdown("---")
 
@@ -106,10 +114,6 @@ with content_section:
         # Generate Overview Dataframes for vCPU & vMemory
         vCPU_overview = custom_functions.generate_vCPU_overview_df(custom_df)
         vMemory_overview = custom_functions.generate_vMemory_overview_df(custom_df)
-
-        # Set bar chart setting to static for both  charts
-        bar_chart_config = {'staticPlot': True}
-        bar_chart_marker_colors = ['#F36D21', '#4C4C4E', '#6560AB', '#3ABFEF', '#034EA2']
 
         # Generate 2 Main Columns
         column_1, column_2 = st.columns(2)
@@ -124,69 +128,43 @@ with content_section:
         with column_1_1:
             # Unfortunately no vertical center implemented in streamlit yet - therefore the following workaround needed
             st.write('')
-            st.write('')
-            st.write('')
-            st.write('')
             st.table(vCPU_overview)
 
         with column_2_1:        
-            bar_chart_vCPU = px.bar(        
-                vCPU_overview,
-                x = "",
-                y = "vCPU"
-            )
-            bar_chart_vCPU.update_traces(marker_color=bar_chart_marker_colors)
-            st.plotly_chart(bar_chart_vCPU,use_container_width=True, config=bar_chart_config)
+            bar_chart_vCPU, vCPU_bar_chart_config = custom_functions.generate_bar_charts(vCPU_overview,"vCPU")
+            st.plotly_chart(bar_chart_vCPU,use_container_width=True, config=vCPU_bar_chart_config)
 
         with column_3_1:
             # Unfortunately no vertical center implemented in streamlit yet - therefore the following workaround needed
             st.write('')
-            st.write('')
-            st.write('')
-            st.write('')
             st.table(vMemory_overview)
 
         with column_4_1:
-            bar_chart_vMemory = px.bar(        
-                vMemory_overview.data,
-                x = "",
-                y = "GiB"
-            )
-            bar_chart_vMemory.update_traces(marker_color=bar_chart_marker_colors)
-            st.plotly_chart(bar_chart_vMemory,use_container_width=True, config=bar_chart_config)
+            bar_chart_vMemory, vMemory_bar_chart_config = custom_functions.generate_bar_charts(vMemory_overview.data,"GiB")
+            st.plotly_chart(bar_chart_vMemory,use_container_width=True, config=vMemory_bar_chart_config)
 
         # Main Section for VM Details
         savings_vCPU, savings_vMemory = custom_functions.get_savings_value(performance_type_selected,vCPU_overview,vMemory_overview.data)
         st.markdown(f"<h5 style='text-align: center; color:#034EA2;'> In Summe besteht ein mögliches VM Optimierungs-Potenzial von {savings_vCPU} vCPUs und {savings_vMemory} GiB Memory (basierend auf 'Provisioned' vs '{performance_type_selected}' Ressourcen-Bedarf).</h5>", unsafe_allow_html=True)
         st.markdown("<h4 style='text-align: center; color:#000000; background-color: #F5F5F5;'>vCPU & vMemory Auslastungs-Verteilung:</h4><br />", unsafe_allow_html=True)
-        st.markdown("Die folgenden zwei Diagramme geben einen Überblick wie sich die einzelnen VMs hinsichtlich Ihrer zugewiesenen und tatsächlich verwendeter Ressourcen einsortieren lassen - jeder Punkt repräsentiert dabei eine VM. Das Diagramm ist interaktiv und bietet beim mit der Maus darüber fahren weitergehende Informationen zur der jeweiligen VM.")
+        st.markdown("Die folgenden Diagramme geben einen Überblick wie sich die einzelnen VMs hinsichtlich Ihrer prozentual verwendeten vs Ihrer zugewiesenen Ressourcen verhalten. **Es steht jeweils ein Diagramm bereit welches die VM Auslastung im Bezug zur Anzahl der VMs setzt und zum anderen im Bezug auf die zugewiesenen Ressourcen.** Erstes Diagramm (*ein sog. Histogram in gruppierten 5% Schritten*) bietet einen Überblick wie die prozentuale Auslastung für alle VMs im Verhältnis aussieht, letzteres Diagramm (*ein sog. Scatter Diagramm*) hingegen erlaubt einen Bezug zwischen zugewiesener Ressourcen und tatsächlicher Nutzung auf einzelner VM Ebene.")
 
-        background_image = dict(source="https://raw.githubusercontent.com/MStenke/NTNX-VM_Right_Sizing/main/nutanix-x.png", xref="paper", yref="paper", x=0.5, y=0.5, sizex=1, sizey=1, xanchor="center", yanchor="middle", opacity=0.04, layer="below", sizing="contain")
-        # Generate 2 Columns for vCPu & VMemory Overview tables & graphs
         column_1_2, column_2_2 = st.columns(2)
         with column_1_2:
-            scatter_chart_vCPU = px.scatter(        
-                custom_df,
-                x = "vCPU "+performance_type_selected+" %",
-                y = "vCPUs",
-                hover_name="VM Name",
-                hover_data=["vCPU "+performance_type_selected+" #"]
-            )
-            scatter_chart_vCPU.update_traces(marker=dict(size=6,color='#034EA2'))
 
-            scatter_chart_vCPU.add_layout_image(background_image)
-            st.plotly_chart(scatter_chart_vCPU,use_container_width=True)
+            histogram_chart_vCPU, histogram_chart_vCPU_config = custom_functions.generate_histogram_charts(custom_df, "vCPUs", performance_type_selected)
+            st.plotly_chart(histogram_chart_vCPU,use_container_width=True, config=histogram_chart_vCPU_config)
+
+            scatter_chart_vCPU, scatter_chart_vCPU_config = custom_functions.generate_scatter_charts(custom_df, "vCPUs", performance_type_selected)
+            st.plotly_chart(scatter_chart_vCPU,use_container_width=True, config=scatter_chart_vCPU_config)
+
         with column_2_2:
-            scatter_chart_vMemory = px.scatter(        
-                custom_df,
-                x = "vMemory "+performance_type_selected+" %",
-                y = "vMemory Size (GiB)",
-                hover_name="VM Name",
-                hover_data=["vMemory "+performance_type_selected+" #"]
-            )
-            scatter_chart_vMemory.update_traces(marker=dict(size=6,color='#034EA2'))
-            scatter_chart_vMemory.add_layout_image(background_image)
-            st.plotly_chart(scatter_chart_vMemory,use_container_width=True)
+
+            histogram_chart_vMemory, histogram_chart_vMemory_config = custom_functions.generate_histogram_charts(custom_df, "vMemory Size (GiB)", performance_type_selected)
+            st.plotly_chart(histogram_chart_vMemory,use_container_width=True, config=histogram_chart_vMemory_config)
+
+            scatter_chart_vMemory, scatter_chart_vMemory_config = custom_functions.generate_scatter_charts(custom_df, "vMemory Size (GiB)", performance_type_selected)
+            st.plotly_chart(scatter_chart_vMemory,use_container_width=True, config=scatter_chart_vMemory_config)
 
         st.markdown("<h4 style='text-align: center; color:#000000; background-color: #F5F5F5;'>VM Details:</h4><br/>", unsafe_allow_html=True)
         st.markdown("In der folgenden Tabelle können Sie die vCPU & vMemory Details der einzelnen VMs genauer betrachten. Anhand der Filter können Sie bestimmte Spalten ein und oder ausblenden und so verschiedene umfangreiche Ansichten erhalten. Die Spalten lassen sich auf oder absteigend sortieren und rechts neben der Tabelle erscheint beim darüber fahren ein Vergrößern-Symbol um die Tabelle auf Fullscreen zu vergrößern. Die Daten in der Tabelle untergliedern sich dabei zum einen in die jeweiligen '%' und daraus berechneten Total Werte für vCPU & Memory '#'. Zuletzt lässt sich die Tabelle als Excel Datei speichern.")
@@ -202,11 +180,11 @@ with content_section:
 
         # Generate Dataframe to be shown on streamlit website
         output_to_show = custom_functions.generate_results_df_for_output(custom_df,vm_detail_columns_to_show)
-        st.dataframe(output_to_show)
         
-        # Download Section form added in order to avoid reload of download_as_excel function on every filter usage
-        form = st.form(key='my-form2')
-        submit = form.form_submit_button('Aktuelle Auswertung als Excel herunterladen?')
+        st.dataframe(output_to_show)
+
+        with st.form(key='download_form'):
+            submit = st.form_submit_button('Aktuelle Auswertung als Excel herunterladen?')
 
         if submit:
             with st.spinner('Download wird vorbereitet...'):

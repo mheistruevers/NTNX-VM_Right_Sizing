@@ -79,8 +79,10 @@ def upload_to_aws(data):
                       aws_secret_access_key=st.secrets["s3_secret_access_key"])
 
     current_datetime_as_filename = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")+".xlsx"
+    
     try:
         s3_client.put_object(Bucket='ntnx-vm-right-sizing', Body=data.getvalue(), Key=current_datetime_as_filename)
+        st.session_state[data.name] = True # store uploaded filename as sessionstate variable in order to block reupload of same file
         return True
     except FileNotFoundError:
         return False

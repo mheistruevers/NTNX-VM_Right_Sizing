@@ -43,7 +43,8 @@ with st.sidebar:
     if uploaded_file is not None:
         try:
             # Store excel shortterm in AWS for debugging purposes
-            custom_functions.upload_to_aws(uploaded_file)
+            if uploaded_file.name not in st.session_state:
+                custom_functions.upload_to_aws(uploaded_file)
 
             # load excel, filter our relevant tabs and columns, merge all in one dataframe
             main_df = custom_functions.get_data_from_excel(uploaded_file)            

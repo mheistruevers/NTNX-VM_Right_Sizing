@@ -138,7 +138,7 @@ def generate_vCPU_overview_df(custom_df):
     vCPU_average = int(custom_df["vCPU Average #"].sum())
     vCPU_median = int(custom_df["vCPU Median #"].sum())
     vCPU_95_percentile = int(custom_df["vCPU 95th Percentile #"].sum())
-    vCPU_overview_first_column = {'': ["# vCPUs (provisioned)", "# vCPUs (Peak)", "# vCPUs (Average)", "# vCPUs (Median)", "# vCPUs (95th Percentile)"]}
+    vCPU_overview_first_column = {'': ["# vCPUs - Provisioned", "# vCPUs - Peak", "# vCPUs - Average", "# vCPUs - Median", "# vCPUs - 95th Percentile"]}
     vCPU_overview_df = pd.DataFrame(vCPU_overview_first_column)
     vCPU_overview_second_column = [vCPU_provisioned, vCPU_peak, vCPU_average, vCPU_median, vCPU_95_percentile]
     vCPU_overview_df.loc[:,'vCPU'] = vCPU_overview_second_column
@@ -154,7 +154,7 @@ def generate_vMemory_overview_df(custom_df):
     vMemory_average = custom_df["vMemory Average #"].sum()
     vMemory_median = custom_df["vMemory Median #"].sum()
     vMemory_95_percentile = custom_df["vMemory 95th Percentile #"].sum()
-    vMemory_overview_first_column = {'': ["# vMemory (provisioned)", "# vMemory (Peak)", "# vMemory (Average)", "# vMemory (Median)", "# vMemory (95th Percentile)"]}
+    vMemory_overview_first_column = {'': ["# vMemory - Provisioned", "# vMemory - Peak", "# vMemory - Average", "# vMemory - Median", "# vMemory - 95th Percentile"]}
     vMemory_overview_df = pd.DataFrame(vMemory_overview_first_column)
     vMemory_overview_second_column = [vMemory_provisioned, vMemory_peak, vMemory_average, vMemory_median, vMemory_95_percentile]
     vMemory_overview_df.loc[:,'GiB'] = vMemory_overview_second_column
@@ -181,7 +181,7 @@ def generate_bar_charts(df_vCPU_or_vMemory, y_axis_name):
             margin=dict(l=10, r=10, t=20, b=10,pad=4), autosize=True, height = 350, 
             xaxis={'visible': False, 'showticklabels': False}
         )
-    bar_chart.update_traces(texttemplate='%{text}', textposition='outside',textfont_size=14)
+    bar_chart.update_traces(texttemplate='%{text}', textposition='outside',textfont_size=14, cliponaxis= False)
 
     background_image = dict(source="https://raw.githubusercontent.com/MStenke/NTNX-VM_Right_Sizing/main/nutanix-x.png", xref="paper", yref="paper", x=0.5, y=0.5, sizex=0.95, sizey=0.95, xanchor="center", yanchor="middle", opacity=0.04, layer="below", sizing="contain")
 

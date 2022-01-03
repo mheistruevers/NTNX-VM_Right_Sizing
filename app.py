@@ -31,7 +31,6 @@ content_section = st.container() # Content of page - either error message if wro
 ######################
 # Page content
 ######################
-
 with st.sidebar:
     st.markdown('# **Upload**')
     uploaded_file = st.sidebar.file_uploader(label="Laden Sie Ihre Excel basierte Collector Auswertung hier hoch.", type=['xlsx'])
@@ -68,7 +67,7 @@ with st.sidebar:
 
         except Exception as e:
             content_section.error("##### FEHLER: Die hochgeladene Excel Datei konnte leider nicht ausgelesen werden.")
-            content_section.markdown("**Bitte stellen Sie sicher, dass folgende Tabs mit den jeweiligen Spalten hinterlegt sind:**")
+            content_section.markdown("**Bitte stellen Sie sicher, dass es sich um eine Nutanix Collector Datei handelt welche folgende Tabs mit den jeweiligen Spalten hinterlegt hat:**")
             content_section.markdown("""
                 * ***vInfo***
                     * VM Name
@@ -122,7 +121,7 @@ with content_section:
         with column_2:
             st.markdown("<h4 style='text-align: center; color:#000000; background-color: #F5F5F5;'>vMemory Gesamt-Auswertung:</h4>", unsafe_allow_html=True)
         
-        # Generate 4 Columns for vCPu & VMemory Overview tables & graphs
+        # Generate 4 Columns for vCPU & VMemory Overview tables & graphs
         column_1_1, column_2_1, column_3_1, column_4_1 = st.columns([1,1.7,1,1.7])
         
         with column_1_1:

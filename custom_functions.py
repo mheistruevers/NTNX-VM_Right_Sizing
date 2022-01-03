@@ -133,17 +133,6 @@ def get_vMemory_total_values(df_row, compare_value):
             get_total_value = np.ceil(get_total_value)
     return get_total_value
 
-# Returns a value rounded up to a specific number of decimal places.
-def round_decimals_up(number:float, decimals:int=2):
-    if not isinstance(decimals, int):
-        raise TypeError("decimal places must be an integer")
-    elif decimals < 0:
-        raise ValueError("decimal places has to be 0 or more")
-    elif decimals == 0:
-        return math.ceil(number)
-    factor = 10 ** decimals
-    return np.ceil(number * factor) / factor
-
 # Generate vCPU Overview Section for streamlit column 1+2
 @st.cache
 def generate_vCPU_overview_df(custom_df):

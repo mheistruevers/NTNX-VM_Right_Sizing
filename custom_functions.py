@@ -7,7 +7,22 @@ from io import BytesIO
 from datetime import datetime
 from botocore.exceptions import ClientError
 import boto3
+from PIL import Image
 
+######################
+# Initialize variables
+######################
+# background nutanix logo for diagrams
+background_image = dict(source=Image.open("images/nutanix-x.png"), xref="paper", yref="paper", x=0.5, y=0.5, sizex=0.95, sizey=0.95, xanchor="center", yanchor="middle", opacity=0.04, layer="below", sizing="contain")
+
+######################
+# Custom Functions
+######################
+# Use local CSS
+def local_css(file_name):
+    with open(file_name) as f:
+        #st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+        return f.read()
 
 # Generate Dataframe from Excel and make neccessary adjustment for easy consumption later on
 @st.cache
@@ -183,8 +198,6 @@ def generate_bar_charts(df_vCPU_or_vMemory, y_axis_name):
         )
     bar_chart.update_traces(texttemplate='%{text}', textposition='outside',textfont_size=14, cliponaxis= False)
 
-    background_image = dict(source="https://raw.githubusercontent.com/MStenke/NTNX-VM_Right_Sizing/main/nutanix-x.png", xref="paper", yref="paper", x=0.5, y=0.5, sizex=0.95, sizey=0.95, xanchor="center", yanchor="middle", opacity=0.04, layer="below", sizing="contain")
-
     bar_chart.add_layout_image(background_image)
 
     bar_chart_config = { 'staticPlot': True}
@@ -218,8 +231,6 @@ def generate_histogram_charts(custom_df, y_axis_name, performance_type_selected)
 
     histogram_chart.update_traces(marker=dict(color='#034EA2'),texttemplate='%{text}', textposition='outside',textfont_size=14, cliponaxis= False)
 
-    background_image = dict(source="https://raw.githubusercontent.com/MStenke/NTNX-VM_Right_Sizing/main/nutanix-x.png", xref="paper", yref="paper", x=0.5, y=0.5, sizex=0.95, sizey=0.95, xanchor="center", yanchor="middle", opacity=0.04, layer="below", sizing="contain")
-
     histogram_chart.add_layout_image(background_image)
 
     histogram_chart_config = {'staticPlot': True}
@@ -249,8 +260,6 @@ def generate_scatter_charts(custom_df, y_axis_name, performance_type_selected):
             margin=dict(l=10, r=10, t=20, b=10,pad=4), autosize=True,
             xaxis={'visible': True, 'showticklabels': True}
         )
-
-    background_image = dict(source="https://raw.githubusercontent.com/MStenke/NTNX-VM_Right_Sizing/main/nutanix-x.png", xref="paper", yref="paper", x=0.5, y=0.5, sizex=0.95, sizey=0.95, xanchor="center", yanchor="middle", opacity=0.04, layer="below", sizing="contain")
 
     scatter_chart.add_layout_image(background_image)
     scatter_chart_config = { 

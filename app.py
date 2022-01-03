@@ -11,19 +11,15 @@ import time
 ######################
 # Page Config
 ######################
-st.set_page_config(page_title="VM Right Sizing Analyse", page_icon='favicon.ico', layout="wide")
-hide_streamlit_style = """
-            <style>
-            header {visibility: hidden;}
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            table td:nth-child(1) {display: none}
-            table th:nth-child(1) {display: none}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
-custom_df = pd.DataFrame() # Initialize Main Dataframe as Empty in order to check whether it has been filled
+st.set_page_config(page_title="VM Right Sizing Analyse", page_icon='./style/favicon.ico', layout="wide")
+# Use CSS Modifications stored in CSS file            
+st.markdown(f"<style>{custom_functions.local_css('style/style.css')}</style>", unsafe_allow_html=True)
 warnings.simplefilter("ignore") # Ignore openpyxl Excile File Warning while reading (no default style)
+
+######################
+# Initialize variables
+######################
+custom_df = pd.DataFrame() # Initialize Main Dataframe as Empty in order to check whether it has been filled
 filter_form_submitted = False
 
 ######################
@@ -155,6 +151,7 @@ with content_section:
 
         column_1_2, column_2_2 = st.columns(2)
         with column_1_2:
+            st.markdown("<h4 style='text-align: center; color:#034EA2;'>vCPU Diagramme</h4>", unsafe_allow_html=True)
 
             histogram_chart_vCPU, histogram_chart_vCPU_config = custom_functions.generate_histogram_charts(custom_df, "vCPUs", performance_type_selected)
             st.plotly_chart(histogram_chart_vCPU,use_container_width=True, config=histogram_chart_vCPU_config)
@@ -163,6 +160,7 @@ with content_section:
             st.plotly_chart(scatter_chart_vCPU,use_container_width=True, config=scatter_chart_vCPU_config)
 
         with column_2_2:
+            st.markdown("<h4 style='text-align: center; color:#034EA2;'>vMemory Diagramme</h4>", unsafe_allow_html=True)
 
             histogram_chart_vMemory, histogram_chart_vMemory_config = custom_functions.generate_histogram_charts(custom_df, "vMemory Size (GiB)", performance_type_selected)
             st.plotly_chart(histogram_chart_vMemory,use_container_width=True, config=histogram_chart_vMemory_config)

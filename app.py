@@ -33,7 +33,7 @@ content_section = st.container() # Content of page - either error message if wro
 ######################
 with st.sidebar:
     st.markdown('# **Upload**')
-    uploaded_file = st.sidebar.file_uploader(label="Laden Sie Ihre Excel basierte Collector Auswertung hier hoch.", type=['xlsx'])
+    uploaded_file = st.sidebar.file_uploader(label="Laden Sie Ihre Excel basierte Collector Auswertung hier hoch.", type=['xlsx'], help='Diesen Excel Export können Sie entweder direkt aus der Collector Anwendung heraus erzeugen oder über das Collector Portal mittels "Export as .XLS". ')
 
     if uploaded_file is not None:
         try:
@@ -49,17 +49,18 @@ with st.sidebar:
             vCluster_selected = st.sidebar.multiselect(
                 "vCluster:",
                 options=sorted(main_df["Cluster Name"].unique()),
-                default=sorted(main_df["Cluster Name"].unique())
+                default=sorted(main_df["Cluster Name"].unique()), help='Filtern Sie nach dem gewünschten vClustern.'
             )
 
             powerstate_selected = st.sidebar.multiselect(
                 "VM Status:",
                 options=sorted(main_df["Power State"].unique()),
-                default="poweredOn"
+                default="poweredOn", help='Filtern Sie nach den gewünschten PowerStatus (PoweredOn ist die empfohlene Einstellung, da i.d.R. nur hier Performance Daten zur Verfügung stehen).'
             )
 
             performance_type_selected = st.sidebar.selectbox(
-                'Performance Vergleichswerte:', ('95th Percentile','Peak','Average','Median')
+                'Performance Vergleichswerte:', ('95th Percentile','Peak','Average','Median'),
+                help='Wählen Sie den zu Vergleichzwecken betrachtenden Performance Typ (95th Percentile ist empfohlen).'
             )
 
             # Apply Multiselect Filter to dataframe
@@ -96,7 +97,7 @@ with st.sidebar:
 with header_section:
     
     st.markdown("<h1 style='text-align: left; color:#034ea2;'>VM Right Sizing Analyse</h1>", unsafe_allow_html=True)
-    st.markdown('Ein Hobby-Projekt von [**Martin Stenke**](https://www.linkedin.com/in/mstenke/) zur einfachen Analyse einer Nutanix Collector Auswertung hinsichtlich VM Right Sizing Empfehlungen.')
+    st.markdown('Ein Hobby-Projekt von [**Martin Stenke**](https://www.linkedin.com/in/mstenke/) zur einfachen Analyse einer[**Nutanix Collector**](https://collector.nutanix.com/) Auswertung hinsichtlich VM Right Sizing Empfehlungen.')
 
     remarks_expander = st.expander(label='Hinweise')
     with remarks_expander:

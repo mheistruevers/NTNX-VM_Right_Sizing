@@ -43,6 +43,7 @@ def get_data_from_excel(uploaded_file):
     df_vMemory = df.parse('vMemory', usecols=vMemory_cols_to_use)
     df_vMemory.convert_dtypes().dtypes # autoset datatypes to reduce memory consumption    
 
+
     # Rename columns to make it shorter
     df_vCPU.rename(columns={'95th Percentile % (recommended)': '95th Percentile %'}, inplace=True)
     df_vMemory.rename(columns={'95th Percentile % (recommended)': '95th Percentile %'}, inplace=True)
@@ -282,9 +283,10 @@ def drop_columns_based_on_multiselect(new_df, vm_detail_columns_to_show):
 #@st.cache - I do not think cache helps here, as it gets regenerated after a change / download
 def download_as_excel(output_to_show, vCPU_overview, vMemory_overview):
 
+    print(output_to_show.data.dtypes)
     output = BytesIO()
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
-    output_to_show.to_excel(writer, index=False, sheet_name='VM Details', startrow=4, startcol=0)
+    output_to_show.to_excel(writer, index=False, sheet_name='VM Details', startrow=4, startcol=0, float_format='%.2f')
     workbook = writer.book
     worksheet_vm_details = writer.sheets['VM Details']
     header_format = workbook.add_format({'bold': True, 'font_color': '#034EA2','font_size':18})

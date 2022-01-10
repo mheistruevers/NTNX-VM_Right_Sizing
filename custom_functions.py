@@ -283,7 +283,6 @@ def drop_columns_based_on_multiselect(new_df, vm_detail_columns_to_show):
 #@st.cache - I do not think cache helps here, as it gets regenerated after a change / download
 def download_as_excel(output_to_show, vCPU_overview, vMemory_overview):
 
-    print(output_to_show.data.dtypes)
     output = BytesIO()
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
     output_to_show.to_excel(writer, index=False, sheet_name='VM Details', startrow=4, startcol=0, float_format='%.2f')

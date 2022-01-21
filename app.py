@@ -104,7 +104,7 @@ with st.sidebar:
 with header_section:
     
     st.markdown("<h1 style='text-align: left; color:#034ea2;'>VM Right Sizing Analyse</h1>", unsafe_allow_html=True)
-    st.markdown('Ein Hobby-Projekt von [**Martin Stenke**](https://www.linkedin.com/in/mstenke/) zur einfachen Analyse einer [**Nutanix Collector**](https://collector.nutanix.com/) Auswertung hinsichtlich VM Right Sizing Empfehlungen. (Zuletzt aktualisiert: 21.01.2022')
+    st.markdown('Ein Hobby-Projekt von [**Martin Stenke**](https://www.linkedin.com/in/mstenke/) zur einfachen Analyse einer [**Nutanix Collector**](https://collector.nutanix.com/) Auswertung hinsichtlich VM Right Sizing Empfehlungen. (Zuletzt aktualisiert: 21.01.2022)')
 
     remarks_expander = st.expander(label='Hinweise')
     with remarks_expander:

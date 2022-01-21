@@ -211,7 +211,7 @@ def generate_histogram_charts(custom_df, y_axis_name, performance_type_selected)
     histogram_chart = px.bar(
             x=bins,
             y=counts, 
-            labels={"x"},
+            labels={'x':prefix_string + performance_type_selected+" %", 'y':'Anzahl VMs'},
             text=np.where(counts>0,counts,'')            
         )
 
@@ -221,12 +221,9 @@ def generate_histogram_charts(custom_df, y_axis_name, performance_type_selected)
         )
     histogram_chart.update_xaxes(dtick=5)
 
-    histogram_chart.update_traces(marker=dict(color='#034EA2'),texttemplate='%{text}', textposition='outside',textfont_size=14, cliponaxis= False)
-
+    histogram_chart.update_traces(marker=dict(color='#034EA2'),texttemplate='%{text}', textposition='outside',textfont_size=14, cliponaxis=False)
     histogram_chart.add_layout_image(background_image)
-
     histogram_chart_config = {'staticPlot': True}
-    #histogram_chart_config = {}
 
     return histogram_chart, histogram_chart_config
 

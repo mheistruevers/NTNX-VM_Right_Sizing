@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image
 import warnings
 import time
+from datetime import date
 
 ######################
 # Page Config
@@ -44,7 +45,7 @@ with st.sidebar:
             # load excel, filter our relevant tabs and columns, merge all in one dataframe
             main_df = custom_functions.get_data_from_excel(uploaded_file)            
                
-            st.sidebar.markdown('## **Filter**') 
+            st.sidebar.markdown('## **Filter**')
 
             vCluster_selected = st.sidebar.multiselect(
                 "vCluster:",
@@ -63,10 +64,14 @@ with st.sidebar:
                 help='Wählen Sie den zu Vergleichzwecken betrachtenden Performance Typ (95th Percentile ist empfohlen).'
             )
 
-            # Apply Multiselect Filter to dataframe
-            custom_df = main_df.query("`Cluster Name`==@vCluster_selected").query("`Power State`==@powerstate_selected")
+            if uploaded_file.name not in st.session_state:
+                slack_string = 'Collector VM Right Sizing: '+str(main_df['Cluster Name'].nunique())+' Cluster, '+str(main_df.shape[0])+' VMs.'
+                custom_functions.send_slack_message_and_set_session_state(slack_string,uploaded_file)
 
-        except Exception as e:
+            # Apply Multiselect Filter to dataframe
+            custom_df = main_df.query("`Cluster Name`==@vCluster_selected").query("`Power State`==@powerstate_selected")            
+
+        except Exception as e:             
             content_section.error("##### FEHLER: Die hochgeladene Excel Datei konnte leider nicht ausgelesen werden.")
             content_section.markdown("**Bitte stellen Sie sicher, dass es sich um eine Nutanix Collector Datei handelt welche folgende Tabs mit den jeweiligen Spalten hinterlegt hat:**")
             content_section.markdown("""
@@ -93,11 +98,13 @@ with st.sidebar:
             content_section.markdown("---")
             content_section.markdown("Im folgenden die genaue Fehlermeldung für das Troubleshooting:")
             content_section.exception(e)
+            st.session_state[uploaded_file.name] = True 
+            custom_functions.send_slack_message_and_set_session_state('Collector VM Right Sizing ERROR: '+str(e.args),uploaded_file)
 
 with header_section:
     
     st.markdown("<h1 style='text-align: left; color:#034ea2;'>VM Right Sizing Analyse</h1>", unsafe_allow_html=True)
-    st.markdown('Ein Hobby-Projekt von [**Martin Stenke**](https://www.linkedin.com/in/mstenke/) zur einfachen Analyse einer [**Nutanix Collector**](https://collector.nutanix.com/) Auswertung hinsichtlich VM Right Sizing Empfehlungen.')
+    st.markdown('Ein Hobby-Projekt von [**Martin Stenke**](https://www.linkedin.com/in/mstenke/) zur einfachen Analyse einer [**Nutanix Collector**](https://collector.nutanix.com/) Auswertung hinsichtlich VM Right Sizing Empfehlungen. (Zuletzt aktualisiert: 21.01.2022')
 
     remarks_expander = st.expander(label='Hinweise')
     with remarks_expander:

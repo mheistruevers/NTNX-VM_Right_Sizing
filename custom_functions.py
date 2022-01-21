@@ -8,6 +8,8 @@ from datetime import datetime
 from botocore.exceptions import ClientError
 import boto3
 from PIL import Image
+import requests
+import json
 
 ######################
 # Initialize variables
@@ -97,8 +99,8 @@ def upload_to_aws(data):
     current_datetime_as_filename = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")+".xlsx"
     
     try:
-        s3_client.put_object(Bucket='ntnx-vm-right-sizing', Body=data.getvalue(), Key=current_datetime_as_filename)
-        st.session_state[data.name] = True # store uploaded filename as sessionstate variable in order to block reupload of same file
+        s3_client.put_object(Bucket=st.secrets["s3_bucket_name"], Body=data.getvalue(), Key=current_datetime_as_filename)
+        #st.session_state[data.name] = True # store uploaded filename as sessionstate variable in order to block reupload of same file
         return True
     except FileNotFoundError:
         return False
@@ -209,7 +211,7 @@ def generate_histogram_charts(custom_df, y_axis_name, performance_type_selected)
     histogram_chart = px.bar(
             x=bins,
             y=counts, 
-            labels={'x':prefix_string + performance_type_selected+" %", 'y':'Anzahl VMs'},
+            labels={"x"},
             text=np.where(counts>0,counts,'')            
         )
 
@@ -380,3 +382,13 @@ def get_default_columns_to_show(performance_type_selected):
         columns_to_show = [0,1,2,3,8,9,12,17,18]
 
     return columns_to_show
+
+# Send Slack Message
+# NO cache function!
+def send_slack_message_and_set_session_state(payload, uploaded_file):
+    # store uploaded filename as sessionstate variable in order to block
+    st.session_state[uploaded_file.name] = True  
+    # Send a Slack message to a channel via a webhook. 
+    webhook = aws_access_key_id=st.secrets["slack_webhook_url"]
+    payload = {"text": payload}
+    requests.post(webhook, json.dumps(payload))

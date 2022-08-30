@@ -39,8 +39,8 @@ with st.sidebar:
     if uploaded_file is not None:
         try:
             # Store excel shortterm in AWS for debugging purposes
-            if uploaded_file.name not in st.session_state:
-                custom_functions.upload_to_aws(uploaded_file)
+            #if uploaded_file.name not in st.session_state:
+            #    custom_functions.upload_to_aws(uploaded_file)
 
             # load excel, filter our relevant tabs and columns, merge all in one dataframe
             main_df = custom_functions.get_data_from_excel(uploaded_file)            
@@ -64,9 +64,9 @@ with st.sidebar:
                 help='Wählen Sie den zu Vergleichzwecken betrachtenden Performance Typ (95th Percentile ist empfohlen).'
             )
 
-            if uploaded_file.name not in st.session_state:
-                slack_string = 'Collector VM Right Sizing: '+str(main_df['Cluster Name'].nunique())+' Cluster, '+str(main_df.shape[0])+' VMs.'
-                custom_functions.send_slack_message_and_set_session_state(slack_string,uploaded_file)
+            #if uploaded_file.name not in st.session_state:
+            #    slack_string = 'Collector VM Right Sizing: '+str(main_df['Cluster Name'].nunique())+' Cluster, '+str(main_df.shape[0])+' VMs.'
+            #    custom_functions.send_slack_message_and_set_session_state(slack_string,uploaded_file)
 
             # Apply Multiselect Filter to dataframe
             custom_df = main_df.query("`Cluster Name`==@vCluster_selected").query("`Power State`==@powerstate_selected")            

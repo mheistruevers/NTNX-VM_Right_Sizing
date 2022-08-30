@@ -6,7 +6,7 @@ import plotly.io as pio
 from io import BytesIO
 from datetime import datetime
 from botocore.exceptions import ClientError
-import boto3
+# import boto3
 from PIL import Image
 import requests
 import json
@@ -92,18 +92,18 @@ def get_data_from_excel(uploaded_file):
 
     return main_df
 
-def upload_to_aws(data):
-    s3_client = boto3.client('s3', aws_access_key_id=st.secrets["s3_access_key_id"],
-                      aws_secret_access_key=st.secrets["s3_secret_access_key"])
-
-    current_datetime_as_filename = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")+".xlsx"
-    
-    try:
-        s3_client.put_object(Bucket=st.secrets["s3_bucket_name"], Body=data.getvalue(), Key=current_datetime_as_filename)
-        #st.session_state[data.name] = True # store uploaded filename as sessionstate variable in order to block reupload of same file
-        return True
-    except FileNotFoundError:
-        return False
+#def upload_to_aws(data):
+#    s3_client = boto3.client('s3', aws_access_key_id=st.secrets["s3_access_key_id"],
+#                      aws_secret_access_key=st.secrets["s3_secret_access_key"])
+#
+#    current_datetime_as_filename = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")+".xlsx"
+#    
+#    try:
+#        s3_client.put_object(Bucket=st.secrets["s3_bucket_name"], Body=data.getvalue(), Key=current_datetime_as_filename)
+#        #st.session_state[data.name] = True # store uploaded filename as sessionstate variable in order to block reupload of same file
+#        return True
+#    except FileNotFoundError:
+#        return False
 
 # Generate vCPU Values for Peak, Median, Average & 95 Percentile
 def get_vCPU_total_values(df_row, compare_value):
@@ -382,10 +382,10 @@ def get_default_columns_to_show(performance_type_selected):
 
 # Send Slack Message
 # NO cache function!
-def send_slack_message_and_set_session_state(payload, uploaded_file):
-    # store uploaded filename as sessionstate variable in order to block
-    st.session_state[uploaded_file.name] = True  
-    # Send a Slack message to a channel via a webhook. 
-    webhook = aws_access_key_id=st.secrets["slack_webhook_url"]
-    payload = {"text": payload}
-    requests.post(webhook, json.dumps(payload))
+#def send_slack_message_and_set_session_state(payload, uploaded_file):
+#    # store uploaded filename as sessionstate variable in order to block
+#    st.session_state[uploaded_file.name] = True  
+#    # Send a Slack message to a channel via a webhook. 
+#    webhook = aws_access_key_id=st.secrets["slack_webhook_url"]
+#    payload = {"text": payload}
+#    requests.post(webhook, json.dumps(payload))

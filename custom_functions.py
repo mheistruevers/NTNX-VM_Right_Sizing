@@ -331,7 +331,7 @@ def download_as_excel(output_to_show, vCPU_overview, vMemory_overview):
     worksheet_anmerkungen.write(6, 0, "Solch ein VM Right Sizing bietet sich vor der Beschaffung einer neuen Infrastruktur an, sollte aber auch darüber hinaus regelmäßig und wiederkehrend durchgeführt werden. Nutanix bietet diese Funktionalität ebenfalls bereits als einen integrierten Bestandteil des Prism PRO Funktionsumfanges. Hierbei werden umfangreichere Analysen durchgeführt die sich über einen längeren Zeitraum erstrecken und weitere Mehrwerte bieten.", cell_format)
     worksheet_anmerkungen.write(8, 0, "Disclaimer: Die automatische Auswertung basiert auf einem Hobby Projekt und dient primär als Anhaltspunkt für ein mögliches Right Sizing - keine Garantie auf Vollständigkeit oder Korrektheit der Auswertung / Daten.", cell_format) 
 
-    writer.save()
+    writer.close()
     processed_data = output.getvalue()
 
     return processed_data
